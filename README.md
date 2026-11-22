@@ -28,6 +28,7 @@ Open http://localhost:5173. Useful URL parameters:
 
 - `?fps`: on-screen frame-rate meter (measure on the real demo laptop/phone)
 - `?venue=example-arena`: the second, fictional venue
+- `?dpr=1.5`: pin the render resolution (otherwise it adapts to the device's speed)
 
 Checks:
 

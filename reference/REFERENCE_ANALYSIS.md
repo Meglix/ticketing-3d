@@ -50,7 +50,7 @@ or photo).
 
 The cross-section is calibrated so that (a) the total geometric capacity is a few
 per cent above 30,335 (the rest is space lost to vomitories, stairs and camera
-positions), (b) the roof's 23 m cantilever covers ~93 % of the seats (excerpt:
+positions), (b) the roof's 23 m cantilever covers most seats (excerpt:
 "over 28,000 of ~30,200 covered"), and (c) every seat has a sightline C-value
 ≥ 60 mm to the pitch centre (and in practice to the near touchline).
 
@@ -63,7 +63,7 @@ positions), (b) the roof's 23 m cantilever covers ~93 % of the seats (excerpt:
 | First row | 1.0 m behind the front wall, tread 1.6 m above the track (eye 2.8 m) | low |
 | Rake | risers 0.30 → 0.40 m (≈ 20.6° → 26.6°), the usual convex profile; last row 6.15 m | low |
 | Front wall | 1.1 m above the first-row tread | low |
-| Accessible platform | Tribuna II centre, behind the last row, 32 wheelchair spaces | low (count is sourced, location is not) |
+| Accessible platform | Tribuna II centre, at pitch level in front of the lower ring (sector `PD`, a separate "ring 0"), 32 wheelchair spaces of 0.9 m | low (count is sourced, location is not; see DECISIONS #16) |
 | VIP / business | Tribuna I centre, sectors 1C and 1D, wider seats (0.55 m) — 1,464 seats in total | medium (count sourced, "VIP in Tribuna I" sourced, exact place estimated) |
 
 ### Inelul 2 (upper ring)
@@ -86,7 +86,7 @@ positions), (b) the roof's 23 m cantilever covers ~93 % of the seats (excerpt:
   interpolated by symmetry. **Confidence: medium for names, low for boundaries.**
 - Ring 2 prices follow the 2011 list exactly (A1 30, A2 40, B 60, C/D 100); E, F1,
   F2 mirror B, A2, A1.
-- Ring 1: 1C/1D = VIP (150 lei), others 25–40 lei (brief: 25–50 lei).
+- Ring 1: 1A1/1F2 25, 1A2/1F1 30, 1B/1E 50 lei (= the brief's 25–50 lei); 1C/1D = VIP/business (150 lei, its own category).
 
 ### Tribuna II (east, opposite)
 - Sectors K1, K2, L, M1, M2, N, O1, O2 (north-east → south-east). `1M1, 1M2` are
@@ -122,3 +122,4 @@ positions), (b) the roof's 23 m cantilever covers ~93 % of the seats (excerpt:
 | Min C-value to the pitch centre | ≥ 60 mm for every seat (test-enforced) |
 | Min C-value to the nearest touchline | 77 mm (upper ring, Tribuna I front rows); ≥ 60 mm everywhere (test-enforced) |
 | Roof vs. top spectator | roof fascia ≥ 3 m above the highest eye (test-enforced) |
+| Roof coverage | 98.1 % of seats under the roof in plan view (54.8 % against rain at 30° from vertical). The source says "over 28,000 of ~30,200" (≈ 93 %), which suggests the real leading edge is 1–2 rows further back than the design-stage 23.07 m cantilever implies. **Check on site.** |

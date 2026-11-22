@@ -65,7 +65,11 @@ which documents *how* they were estimated. The JSON is what the app reads.
    exist, rows moving back and up, `rakeDeg` agreeing with the actual
    row-to-row slope, every row's seats physically fitting, sectors not
    overlapping, the totals matching the declared capacity, and the track
-   fitting inside the bowl. All problems are collected and reported together.
+   fitting inside the bowl, rows not standing on the field of play, roof
+   segments not overlapping. All shape problems (stage 1) are reported
+   together; the semantic checks (stage 2) run once the shape is valid (they
+   need typed data) and again report all their problems together. zod paths
+   name the sector, e.g. `stands[2].rings[2].sectors[4] (2M2).rows[0].seats`.
 
 The app catches the error at start-up and shows the list instead of a broken
 3D scene.
@@ -102,9 +106,8 @@ rectangle** (same straights, corner radius `R + d`). So:
   places each seat exactly, with no iteration.
 
 An athletics bowl with semicircular ends is just `cornerRadius = halfWidth`.
-A theatre would need a different, open curve (a horseshoe). That is the
-extension point: `layout.template` is a discriminated union, and
-`referenceCurveFor()` in `src/geometry/generate.ts` is the one switch to extend.
+A theatre would need a different, open curve (a horseshoe): see §9 for what
+that touches.
 
 ### Seat placement (`src/geometry/seats.ts`)
 
@@ -185,7 +188,7 @@ The scene only turns arrays into GPU buffers, plus a few procedural extras
 - **Stands** are the generator's per-sector solids (`structure.sectorSurfaces`),
   one mesh each, so a sector can be tinted and tapped on its own.
 - **The roof fades with camera height** (`overviewFactor`): a ghost in the
-  overview, so you can see the sectors under a roof that covers ~93 % of seats,
+  overview, so you can see the sectors under a roof that covers ~98 % of seats in plan,
   and solid in the seat view. Trusses, fins and columns stop drawing when faded.
   Nothing on the roof has pointer handlers, so it never steals a tap.
 - **Labels** ("2M2 · de la 40 lei") are DOM chips positioned from inside the
@@ -195,6 +198,13 @@ The scene only turns arrays into GPU buffers, plus a few procedural extras
 - **No shadows and no postprocessing.** A hemisphere + sun light and ACES tone
   mapping give the clean, slightly stylised look. Real-time shadows of 30k
   instances would cost more than everything else together.
+- **Adaptive resolution.** Fill rate is the cost that grows with screen
+  density (DPR 2 ≈ half the frame rate of DPR 1 in our measurements). drei's
+  `PerformanceMonitor` lowers the pixel ratio in 0.5 steps (never below 1) if
+  a device can't hold its frame rate, and raises it again when there is
+  headroom. `?dpr=<n>` pins it for screenshots and comparisons.
+- **The sky dome travels with the camera** (radius 4 km, inside the 5 km far
+  plane), the usual skybox trick; its shader colours by direction only.
 
 Measured cost: about 1.5–2 ms of JavaScript per frame. The rest is pure GPU
 work (see REPORT.md for the numbers and why the headless figures are a floor).
@@ -230,6 +240,12 @@ current position, look target and fov. That one rule makes rapid repeated
 taps safe: no queue, no snapping, the last tap wins. `actions.arrive()` is
 called when a flight ends.
 
+**Rotation and history.** If the phone rotates during a flight or while
+seated, the portrait down-tilt is swapped for the one the new screen shape
+wants, and the user's look is kept. Entering a seat pushes one browser
+history entry, so the phone's back gesture returns to the overview instead of
+leaving the demo (`src/state/history.ts`).
+
 **Taps vs. drags** (`sectorHandlers.ts`): R3F reports how far the pointer
 moved between down and up (`e.delta`). Under 6 px is a tap, which selects;
 more is the end of an orbit or look-around drag, which is ignored. Hover reacts
@@ -260,7 +276,12 @@ slice it shows.
   1–4 adjacent seats and a total, with no payment or personal-data fields.
   It is an accessible dialog: focus is trapped, Escape and backdrop close it,
   and focus returns to the button.
-- A loader until the first frame, and a full-screen validation error page for a bad config.
+- Phones in landscape (short screens) get a compact seat card and a
+  two-column checkout that fits without scrolling.
+- A loader until the first frame, and full-screen pages for the failure cases:
+  an invalid config (validation messages), an unknown `?venue=`, and 3D that
+  can't run (no WebGL, a lost GPU context, or a crash inside the scene, caught
+  by an error boundary). Each has a reload button instead of a blank page.
 
 ## 8. Testing strategy
 
@@ -273,3 +294,30 @@ slice it shows.
 | Meshes | finite, in range, winding agrees with normals, roof above every spectator |
 | Camera math | pure functions: framing fits the outline on laptop + phone, clamps, portrait tilt, and roof-safe flights for every sector, every seat pair and mid-air retargets (with a control test) |
 | Whole app | Playwright on the production build: real taps per stand at 1440×900 and 390×844, screenshots, zero console errors, FPS |
+
+## 9. Extension point: a theatre ("horseshoe") template — what it would touch
+
+Honest scope (found by the independent review): the *data model* and the
+*seat placement* are template-agnostic. Rows are offsets of a reference curve
+and sectors are spans along it. But the closed rounded rectangle is still
+assumed in these places:
+
+| Module | What assumes the bowl |
+|---|---|
+| `geometry/generate.ts` | `referenceCurveFor()`: the template switch (the intended entry point) |
+| `geometry/roundedRect.ts` | the curve itself: `frameAt`, `offsetLength`, `signedDistance` |
+| `geometry/seats.ts`, `structure.ts` | wrap-around of `s` (a closed curve) |
+| `geometry/sightlines.ts` | `signedDistance` of the rounded rectangle (exact level sets) |
+| `venue/validate.ts` | span wrapping, track/pitch fit, field-of-play check |
+| `camera/flight.ts`, `interaction/hitSector.ts` | portals/overhangs and hit tests use `signedDistance` |
+| `scene/Field.tsx`, `scene/Environment.tsx` | the bowl outline for the apron and the plaza |
+
+A horseshoe template therefore means: (1) a `ReferenceCurve` interface
+(`perimeter`, `closed`, `frameAt`, `offsetLength`, `paramAtOffsetLength`,
+`signedDistance`) implemented by both shapes; (2) those 7 modules call the
+interface instead of the rounded-rectangle functions; (3) balcony/box rules
+(stacked tiers that overhang the stalls) in the template's structure builder.
+This is deliberately *not* done yet: with one implementation, an interface
+would be a guess. The seat placement, validation of rows and sightline method
+carry over unchanged.
+

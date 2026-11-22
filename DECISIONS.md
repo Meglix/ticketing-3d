@@ -75,7 +75,7 @@ Each entry: **decision** — alternatives — why. Newest at the bottom.
 
 11. **Roof fades to a ghost in the overview and becomes solid in the seat view.**
     Alternatives: a camera high enough to look under the roof (impossible: the
-    roof covers ~93 % of seats); remove the roof. Why: the overview has to show
+    roof covers ~98 % of seats in plan); remove the roof. Why: the overview has to show
     the sectors, and the seat view has to show the real enclosure.
 
 12. **No postprocessing library.** Alternatives: `@react-three/postprocessing`

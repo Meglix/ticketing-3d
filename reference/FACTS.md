@@ -91,7 +91,7 @@ short excerpts of pages**. So:
 | Upper ring, Tribuna I | 30–100 lei (2A1 30, 2A2 40, 2B 60, 2C/2D 100) | VERIFIED (historical) | brief; search excerpt sport.ro 2011 list |
 | Upper ring, Tribuna II | 25–40 lei | VERIFIED (historical) | brief |
 | Peluze (upper) | 20 lei | VERIFIED (historical) | brief |
-| Lower ring, Tribuna I | 25–50 lei | VERIFIED (historical) | brief |
+| Lower ring, Tribuna I | 25–50 lei (demo: 25 / 30 / 50 lei) | VERIFIED (historical) | brief |
 | Lower ring, Peluze | 15 lei | VERIFIED (excerpt, 2011) | search excerpt https://www.prosport.ro/... (opening match: "15 lei for the lower-ring terrace") |
 | Lower ring, Tribuna II | 20–25 lei (1M1/1M2 25 lei) | VERIFIED (excerpt, 2011) / ESTIMATED for corners | search excerpt sport.ro 2011 list |
 | VIP | 150 lei | ESTIMATED | 2026 derby excerpt lists VIP A 100 / VIP B 120 lei; rounded up for a single demo tier |
@@ -104,8 +104,15 @@ short excerpts of pages**. So:
 | Bowl inner edge: rounded rectangle 184 × 100 m, corner radius 30 m | ESTIMATED | must enclose the 8-lane track with ≥ 2.5 m clearance; corners rounded ("bowl") |
 | Lower ring: 14 rows, 0.80 m treads, rake 21°→27°, first row 1.6 m above the track | ESTIMATED | capacity budget + standard tread depth + sightline C-value ≥ 60 mm |
 | Wheelchair platform (32 spaces) at pitch level in front of Tribuna II | ESTIMATED | count sourced; position chosen (common in bowls with a track) |
-| Upper ring: 16 rows, 0.80 m treads, rake 30°→34°, first row 11.5 m up, ≈ 2.7 m overhang over the lower ring | ESTIMATED | capacity budget; roof cantilever (23 m) must cover ~93 % of seats; touchline C-value ≥ 60 mm |
+| Upper ring: 16 rows, 0.80 m treads, rake 30°→34°, first row 11.5 m up, ≈ 2.7 m overhang over the lower ring | ESTIMATED | capacity budget; roof cantilever (23 m) must cover most seats (model: 98.1 % in plan vs. ≈ 93 % sourced); touchline C-value ≥ 60 mm |
 | Seat width 0.50 m (VIP 0.55 m, wheelchair space 0.90 m) | ESTIMATED | UEFA/Green Guide typical values |
 | Roof: 4 separate cantilever frames, 5 m (reference-line) gaps at corner diagonals | ESTIMATED | "four frames" + "gaps" excerpts; exact gap width unknown |
 | Roof edge ~27 m high, ~23 m cantilever; inner 7 m band translucent | ESTIMATED | from frame dimensions and the polycarbonate area / perimeter ratio |
 | Screen positions | ESTIMATED | number and size sourced; position unknown |
+
+## Interpretations to confirm with the owner
+
+| Item | Interpretation used | Why |
+|---|---|---|
+| "Eye height ~1.2 m above the seat" | 1.2 m above the row's **tread** (floor), ≈ 0.73 m above the seat pan | the standard seated-sightline convention (C-value calculations use eye height above the tread). Taken literally ("above the seat pan") the eye would be at ~1.7 m above the floor, which is a standing height. |
+| VIP / business 1,464 seats | lower ring, Tribuna I centre (1C/1D), priced as a separate VIP tier (150 lei) | "VIP in Tribuna I" is sourced; exact place is not |
