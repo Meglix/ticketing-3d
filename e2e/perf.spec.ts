@@ -15,6 +15,13 @@ for (const dpr of [1, 2]) {
     await page.goto('/');
     await waitForOverview(page);
     await page.waitForTimeout(2000); // warm-up (shader compile, label layout)
+    // Main-thread CPU time per frame (JS + WebGL command encoding), which is
+    // independent of how fast the (software) GPU rasterises.
+    const cdp = await context.newCDPSession(page);
+    await cdp.send('Performance.enable');
+    const metric = async (name: string) =>
+      ((await cdp.send('Performance.getMetrics')).metrics.find((m) => m.name === name)?.value ?? 0) * 1000;
+    const [task0, script0] = [await metric('TaskDuration'), await metric('ScriptDuration')];
     const result = await page.evaluate(
       () =>
         new Promise<{ fps: number; frames: number; worstMs: number; p95Ms: number }>((resolve) => {
@@ -38,6 +45,11 @@ for (const dpr of [1, 2]) {
           requestAnimationFrame(tick);
         }),
     );
+    const [task1, script1] = [await metric('TaskDuration'), await metric('ScriptDuration')];
+    const cpu = {
+      mainThreadMsPerFrame: Number(((task1 - task0) / result.frames).toFixed(2)),
+      scriptMsPerFrame: Number(((script1 - script0) / result.frames).toFixed(2)),
+    };
     const info = await page.evaluate(() => window.__renderInfo?.() ?? null);
     const gpu = await page.evaluate(() => {
       const gl = document.createElement('canvas').getContext('webgl2');
@@ -46,7 +58,7 @@ for (const dpr of [1, 2]) {
     });
     const file = 'screenshots/metrics.json';
     const metrics = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : {};
-    metrics[`overview_dpr${dpr}`] = { ...result, renderer: info, gpu, measuredAt: new Date().toISOString() };
+    metrics[`overview_dpr${dpr}`] = { ...result, cpu, renderer: info, gpu, measuredAt: new Date().toISOString() };
     writeFileSync(file, JSON.stringify(metrics, null, 2) + '\n');
     console.log(`DPR ${dpr}:`, JSON.stringify(metrics[`overview_dpr${dpr}`]));
     if (errors.length) throw new Error(errors.join('\n'));

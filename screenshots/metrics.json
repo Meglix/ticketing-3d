@@ -1,0 +1,40 @@
+{
+  "overview_dpr1": {
+    "fps": 5.396438350688344,
+    "frames": 27,
+    "worstMs": 250,
+    "p95Ms": 250,
+    "cpu": {
+      "mainThreadMsPerFrame": 202.33,
+      "scriptMsPerFrame": 1.45
+    },
+    "renderer": {
+      "calls": 90,
+      "triangles": 162930,
+      "geometries": 80,
+      "textures": 3,
+      "pixelRatio": 1
+    },
+    "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "measuredAt": "2026-11-22T14:58:38.566Z"
+  },
+  "overview_dpr2": {
+    "fps": 1.983418620334008,
+    "frames": 10,
+    "worstMs": 733.1999999999998,
+    "p95Ms": 733.1999999999998,
+    "cpu": {
+      "mainThreadMsPerFrame": 648.17,
+      "scriptMsPerFrame": 2.41
+    },
+    "renderer": {
+      "calls": 90,
+      "triangles": 162930,
+      "geometries": 80,
+      "textures": 3,
+      "pixelRatio": 2
+    },
+    "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
+    "measuredAt": "2026-11-22T14:58:50.265Z"
+  }
+}

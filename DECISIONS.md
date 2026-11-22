@@ -177,3 +177,13 @@ Each entry: **decision** — alternatives — why. Newest at the bottom.
     version resolved all tap points before the first tap. Once the camera
     moves, a stale point lands on a neighbouring sector (2M1) and the app
     correctly flies there, so the test was wrong, not the app.
+
+28. **Seat LOD: a second InstancedMesh with a 4-triangle double-sided seat,
+    shown when the camera is > 140 m from the centre; it shares the instance
+    matrix and colour buffers.** Alternatives: one 20-triangle mesh (lane B's
+    version); GPU-side LOD in a custom shader. Why: in the overview a seat is
+    2–7 px, so 80 % of the triangles bought nothing. Measured in the same
+    headless setup: 648k → 163k triangles, DPR 1 software-rendered fps 3.6 →
+    5.4, script time per frame unchanged (~1.5–2 ms). Sharing the buffers
+    means no extra upload and no colour desync. At the switch distance there is
+    no visible pop (screenshot check).

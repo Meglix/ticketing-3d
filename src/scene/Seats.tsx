@@ -1,7 +1,11 @@
+import { useFrame } from '@react-three/fiber';
 import { useLayoutEffect, useMemo, useRef } from 'react';
 import {
   BoxGeometry,
+  BufferGeometry,
   Color,
+  DoubleSide,
+  Float32BufferAttribute,
   InstancedBufferAttribute,
   type InstancedMesh,
   Matrix4,
@@ -27,6 +31,13 @@ import { PALETTE } from './palette.ts';
  * Colours are only
  * rewritten when hover/selection changes, and only for the sectors whose
  * colour actually changed (uploaded as partial buffer ranges).
+ *
+ * Level of detail: in the overview a seat is a few pixels wide, so a second
+ * InstancedMesh draws each seat as two double-sided quads (4 triangles
+ * instead of 20). It shares the SAME instance matrix and colour buffers, so
+ * there is no extra memory or upload; only the visible mesh switches, by
+ * camera distance from the centre (no visible pop: at the switch distance a
+ * seat is ~2 px). This cuts the overview from ~650k to ~165k triangles.
  */
 
 /** A box without its bottom face (never visible): 10 triangles instead of 12. */
@@ -52,16 +63,40 @@ function makeSeatGeometry() {
   return merged;
 }
 
+/** Far LOD: the pan's top and the backrest's front as two quads (4 triangles), drawn double-sided. */
+function makeFarSeatGeometry(): BufferGeometry {
+  const w = 0.22; // half width
+  // pan top (y 0.475, z −0.17…0.23) and backrest (tilted, from the pan's back up to 0.88 m)
+  const v = [
+    -w, 0.475, 0.23,  w, 0.475, 0.23,  w, 0.475, -0.17,  -w, 0.475, -0.17,
+    -w, 0.475, -0.17,  w, 0.475, -0.17,  w, 0.89, -0.23,  -w, 0.89, -0.23,
+  ];
+  const g = new BufferGeometry();
+  g.setAttribute('position', new Float32BufferAttribute(v, 3));
+  g.setIndex([0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7]);
+  g.computeVertexNormals();
+  return g;
+}
+
+/** Camera distance from the centre spot above which the far LOD is drawn. */
+const FAR_LOD_DISTANCE = 140;
+
 const WHITE = new Color('#ffffff');
 const DIM = new Color(PALETTE.dimTarget);
 
 export function Seats({ venue }: { venue: Venue }) {
   const meshRef = useRef<InstancedMesh>(null);
+  const farRef = useRef<InstancedMesh>(null);
   const { seats, sectors } = venue.manifest;
   const count = seats.length;
 
   const geometry = useMemo(makeSeatGeometry, []);
+  const farGeometry = useMemo(makeFarSeatGeometry, []);
   const material = useMemo(() => new MeshStandardMaterial({ roughness: 0.55, metalness: 0.0 }), []);
+  const farMaterial = useMemo(
+    () => new MeshStandardMaterial({ roughness: 0.55, metalness: 0.0, side: DoubleSide }),
+    [],
+  );
   const colors = useMemo(() => new InstancedBufferAttribute(new Float32Array(count * 3), 3), [count]);
   const tierColor = useMemo(() => {
     const map = new Map<string, Color>();
@@ -90,8 +125,21 @@ export function Seats({ venue }: { venue: Venue }) {
     mesh.instanceMatrix.needsUpdate = true;
     mesh.instanceColor = colors;
     mesh.computeBoundingSphere();
+    const far = farRef.current;
+    if (far) {
+      far.instanceMatrix = mesh.instanceMatrix; // shared buffers: one upload, two meshes
+      far.instanceColor = colors;
+      far.computeBoundingSphere();
+    }
     applied.current.clear();
   }, [count, seats, colors]);
+
+  // Switch LOD by camera distance (cheap: one comparison per frame).
+  useFrame(({ camera }) => {
+    const far = camera.position.length() > FAR_LOD_DISTANCE;
+    if (meshRef.current) meshRef.current.visible = !far;
+    if (farRef.current) farRef.current.visible = far;
+  });
 
   const hovered = useAppState((st) => st.hoveredSector);
   const selected = useAppState((st) => st.selectedSector);
@@ -126,9 +174,16 @@ export function Seats({ venue }: { venue: Venue }) {
     () => () => {
       geometry.dispose();
       material.dispose();
+      farGeometry.dispose();
+      farMaterial.dispose();
     },
-    [geometry, material],
+    [geometry, material, farGeometry, farMaterial],
   );
 
-  return <instancedMesh ref={meshRef} args={[geometry, material, count]} frustumCulled={false} />;
+  return (
+    <>
+      <instancedMesh ref={meshRef} args={[geometry, material, count]} frustumCulled={false} />
+      <instancedMesh ref={farRef} args={[farGeometry, farMaterial, count]} frustumCulled={false} visible={false} />
+    </>
+  );
 }
