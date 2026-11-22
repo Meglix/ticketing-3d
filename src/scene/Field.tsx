@@ -223,23 +223,30 @@ export function Field({ venue }: { venue: Venue }) {
   const ref = config.layout.referenceLine;
 
   const built = useMemo(() => {
-    const straightHalf = track ? track.straightLength / 2 : pitch.length / 2;
-    const r0 = track ? track.innerRadius : pitch.width / 2 + 3;
-    const r1 = track ? r0 + track.lanes * track.laneWidth + 0.4 : r0;
+    const bowlShape = () => roundedRectPath(new Shape(), ref.halfLength, ref.halfWidth, ref.cornerRadius);
 
-    // Infield (inside the track kerb): striped grass.
-    const infieldShape = stadiumPath(new Shape(), straightHalf, r0);
-    const infield = shapeGeometry(infieldShape, 64);
-
-    // Track ring.
-    const trackShape = stadiumPath(new Shape(), straightHalf, r1);
-    trackShape.holes.push(stadiumPath(new Path(), straightHalf, r0));
-    const trackGeo = track ? shapeGeometry(trackShape, 64) : null;
-
-    // Apron: from the track's outer edge to the front of the stands.
-    const apronShape = roundedRectPath(new Shape(), ref.halfLength, ref.halfWidth, ref.cornerRadius);
-    apronShape.holes.push(stadiumPath(new Path(), straightHalf, r1));
-    const apron = shapeGeometry(apronShape, 64);
+    // Without a track (football-only bowl) the striped grass fills the whole
+    // bowl up to the front of the stands: no track ring, no apron.
+    let infield: BufferGeometry;
+    let trackGeo: BufferGeometry | null = null;
+    let apron: BufferGeometry | null = null;
+    const straightHalf = track ? track.straightLength / 2 : 0;
+    const r0 = track ? track.innerRadius : 0;
+    if (track) {
+      const r1 = r0 + track.lanes * track.laneWidth + 0.4;
+      // Infield (inside the track kerb): striped grass.
+      infield = shapeGeometry(stadiumPath(new Shape(), straightHalf, r0), 64);
+      // Track ring.
+      const trackShape = stadiumPath(new Shape(), straightHalf, r1);
+      trackShape.holes.push(stadiumPath(new Path(), straightHalf, r0));
+      trackGeo = shapeGeometry(trackShape, 64);
+      // Apron: from the track's outer edge to the front of the stands.
+      const apronShape = bowlShape();
+      apronShape.holes.push(stadiumPath(new Path(), straightHalf, r1));
+      apron = shapeGeometry(apronShape, 64);
+    } else {
+      infield = shapeGeometry(bowlShape(), 64);
+    }
 
     const lines = ribbons(pitchMarkings(pitch.length, pitch.width), 0.12, 0.02);
 
@@ -298,7 +305,7 @@ export function Field({ venue }: { venue: Venue }) {
     <group>
       <mesh geometry={built.infield} material={mats.grass} />
       {built.trackGeo && <mesh geometry={built.trackGeo} material={mats.track} />}
-      <mesh geometry={built.apron} material={mats.apron} />
+      {built.apron && <mesh geometry={built.apron} material={mats.apron} />}
       <mesh geometry={built.lines} material={mats.line} />
       {built.laneLines && <mesh geometry={built.laneLines} material={mats.laneLine} />}
       <mesh geometry={built.goals.frame} material={mats.goalFrame} />

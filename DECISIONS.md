@@ -187,3 +187,10 @@ Each entry: **decision** — alternatives — why. Newest at the bottom.
     5.4, script time per frame unchanged (~1.5–2 ms). Sharing the buffers
     means no extra upload and no colour desync. At the switch distance there is
     no visible pop (screenshot check).
+
+29. **Field without a track: grass fills the whole bowl, no apron.** Found by
+    rendering `?venue=example-arena`. The renderer's track-less fallback built
+    a "track-shaped" infield (52.5 m straights + 37 m bends) that reached
+    outside a compact bowl, so the apron's hole was bigger than its outline and
+    triangulated into garbage (red/green z-fighting). Lesson: the second venue
+    tests the renderer's assumptions, not only the generator's.
