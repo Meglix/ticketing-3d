@@ -46,14 +46,10 @@ export const strings = {
 
   // Seat panel
   panelLabel: 'Locul selectat',
-  fieldRing: 'Inel',
   fieldSector: 'Sector',
   fieldRow: 'Rând',
   fieldSeat: 'Loc',
-  fieldPrice: 'Preț',
-  perTicket: '/ bilet',
   buy: 'Cumpără',
-  back: 'Înapoi la stadion',
   dragHint: 'Trage pentru a privi în jur',
 
   // Checkout
