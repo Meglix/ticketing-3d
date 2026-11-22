@@ -1,7 +1,360 @@
+import { useFrame, useThree } from '@react-three/fiber';
+import { useEffect, useMemo, useRef } from 'react';
+import type { PerspectiveCamera } from 'three';
+import type { Vec3 } from '../geometry/types.ts';
+import { TestSeam } from '../interaction/TestSeam.tsx';
+import { actions, appStore } from '../state/store.ts';
 import type { Venue } from '../venue/loadVenue.ts';
+import {
+  anglesOf,
+  clamp,
+  clampLook,
+  clampOrbit,
+  defaultOverviewOrbit,
+  deg,
+  directionOf,
+  easeInOutCubic,
+  isPortrait,
+  length,
+  lerp,
+  lerpNumber,
+  OVERVIEW_LIMITS,
+  overviewPose,
+  scale,
+  seatFov,
+  seatPose,
+  sub,
+  add,
+  vec,
+  wrapAngle,
+  type CameraPose,
+  type LookAngles,
+  type OverviewOrbit,
+} from './cameraMath.ts';
+import { flightEnvelope, planFlight, type Flight } from './flight.ts';
+import { framingOutline } from './framing.ts';
 
-/** LANE C STUB — replaced by the camera lane. Drives the camera from the store (rendered inside <Canvas>). */
+/**
+ * Drives the single camera. A small state machine, advanced in useFrame:
+ *
+ *   intro ──► overview ◄──► flying ◄──► seat
+ *
+ * - The store says where the camera should be (view + seatId). Whenever that
+ *   changes, a new 1.5 s flight starts FROM THE CURRENT POSE. That is why rapid
+ *   taps are safe: each tap re-targets smoothly, nothing is queued or snapped.
+ * - When a flight ends, actions.arrive() clears `inTransit`.
+ * - Overview: drag = orbit, wheel / pinch = zoom (within limits).
+ *   Seat: drag = look around (±75° yaw around the pitch centre, −50°…+20° pitch).
+ * - The frame loop reads the store directly (appStore.get()), so moving the
+ *   camera never re-renders React.
+ */
+
+const FLIGHT_SECONDS = 1.5;
+const INTRO_SECONDS = 2.2;
+/** A pointer that moves less than this (CSS px) is a tap, not a drag. Same threshold as the sector handlers. */
+export const TAP_SLOP_PX = 6;
+const ORBIT_SPEED = 0.005; // rad per px
+const TILT_SPEED = 0.004; // rad per px
+const ORIGIN = vec(0, 0, 0);
+
+type Mode = 'intro' | 'overview' | 'flying' | 'seat';
+
+interface RigState {
+  mode: Mode;
+  /** Destination currently being served: 'overview' or 'seat:<id>'. */
+  goalKey: string;
+  flight: Flight | null;
+  flightStart: number;
+  flightGoal: 'overview' | 'seat';
+  introStart: number;
+  introFrom: OverviewOrbit;
+  orbit: OverviewOrbit;
+  aspect: number;
+  lookBase: LookAngles;
+  look: LookAngles;
+  lookDistance: number;
+  /** Point the camera currently looks at. */
+  target: Vec3;
+  dragging: boolean;
+}
+
+const toVec = (v: { x: number; y: number; z: number }): Vec3 => vec(v.x, v.y, v.z);
+
+function lerpOrbit(a: OverviewOrbit, b: OverviewOrbit, t: number): OverviewOrbit {
+  return {
+    azimuth: a.azimuth + wrapAngle(b.azimuth - a.azimuth) * t,
+    elevation: lerpNumber(a.elevation, b.elevation, t),
+    zoom: lerpNumber(a.zoom, b.zoom, t),
+  };
+}
+
+function introOrbit(orbit: OverviewOrbit): OverviewOrbit {
+  return {
+    azimuth: orbit.azimuth + deg(55),
+    elevation: Math.min(OVERVIEW_LIMITS.maxElevation, orbit.elevation + deg(16)),
+    zoom: orbit.zoom * 1.3,
+  };
+}
+
+const prefersReducedMotion = (): boolean =>
+  typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
 export function CameraRig({ venue }: { venue: Venue }) {
-  void venue;
-  return null;
+  const camera = useThree((s) => s.camera) as PerspectiveCamera;
+  const gl = useThree((s) => s.gl);
+  const env = useMemo(() => flightEnvelope(venue.config), [venue]);
+  const outline = useMemo(() => framingOutline(venue), [venue]);
+
+  const rig = useRef<RigState | null>(null);
+  if (rig.current === null) {
+    const aspect = typeof window !== 'undefined' ? window.innerWidth / Math.max(1, window.innerHeight) : 1.6;
+    const orbit = defaultOverviewOrbit(aspect);
+    rig.current = {
+      mode: prefersReducedMotion() ? 'overview' : 'intro',
+      goalKey: 'overview',
+      flight: null,
+      flightStart: 0,
+      flightGoal: 'overview',
+      introStart: -1,
+      introFrom: introOrbit(orbit),
+      orbit,
+      aspect,
+      lookBase: { yaw: 0, pitch: 0 },
+      look: { yaw: 0, pitch: 0 },
+      lookDistance: 1,
+      target: ORIGIN,
+      dragging: false,
+    };
+  }
+
+  // ------------------------------------------------------------------------
+  // Input: orbit / look / zoom on the canvas element, Escape on the window.
+  // ------------------------------------------------------------------------
+  useEffect(() => {
+    const el = gl.domElement;
+    const r = rig.current!;
+    el.style.touchAction = 'none'; // the browser must not scroll/zoom the page on touch drags
+    const pointers = new Map<number, { x: number; y: number }>();
+    let downAt: { x: number; y: number } | null = null;
+    let pinch: { dist: number; zoom: number } | null = null;
+
+    const pointerDistance = (): number => {
+      const [a, b] = [...pointers.values()];
+      return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 1;
+    };
+    /** Stop the intro where it is and hand control to the user. */
+    const endIntro = (): void => {
+      if (r.mode !== 'intro') return;
+      r.mode = 'overview';
+    };
+
+    const onDown = (e: PointerEvent): void => {
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pointers.size === 1) {
+        downAt = { x: e.clientX, y: e.clientY };
+        r.dragging = false;
+      } else if (pointers.size === 2) {
+        pinch = { dist: Math.max(1, pointerDistance()), zoom: r.orbit.zoom };
+        r.dragging = true;
+      }
+    };
+
+    const onMove = (e: PointerEvent): void => {
+      const prev = pointers.get(e.pointerId);
+      if (!prev) return;
+      const cur = { x: e.clientX, y: e.clientY };
+      pointers.set(e.pointerId, cur);
+
+      if (pointers.size >= 2) {
+        if (pinch && (r.mode === 'overview' || r.mode === 'intro')) {
+          endIntro();
+          r.orbit = clampOrbit({ ...r.orbit, zoom: (pinch.zoom * pinch.dist) / Math.max(1, pointerDistance()) });
+        }
+        return;
+      }
+      if (!downAt) return;
+      if (!r.dragging) {
+        if (Math.hypot(cur.x - downAt.x, cur.y - downAt.y) < TAP_SLOP_PX) return;
+        r.dragging = true;
+        try {
+          el.setPointerCapture(e.pointerId);
+        } catch {
+          /* pointer already gone */
+        }
+        el.style.cursor = 'grabbing';
+      }
+      const dx = cur.x - prev.x;
+      const dy = cur.y - prev.y;
+      endIntro();
+      if (r.mode === 'overview') {
+        r.orbit = clampOrbit({
+          azimuth: r.orbit.azimuth + dx * ORBIT_SPEED,
+          elevation: r.orbit.elevation + dy * TILT_SPEED,
+          zoom: r.orbit.zoom,
+        });
+      } else if (r.mode === 'seat') {
+        // "Drag the world": content follows the finger (≈ 1:1 at the screen centre).
+        const k = deg(camera.fov) / Math.max(1, el.clientHeight);
+        r.look = clampLook(r.lookBase, { yaw: r.look.yaw - dx * k, pitch: r.look.pitch + dy * k });
+      }
+    };
+
+    const onUp = (e: PointerEvent): void => {
+      pointers.delete(e.pointerId);
+      if (el.hasPointerCapture?.(e.pointerId)) el.releasePointerCapture(e.pointerId);
+      if (pointers.size < 2) pinch = null;
+      if (pointers.size === 0) {
+        downAt = null;
+        r.dragging = false;
+        el.style.cursor = '';
+      } else {
+        // One finger left after a pinch: continue as a drag from where it is.
+        downAt = [...pointers.values()][0] ?? null;
+      }
+    };
+
+    const onWheel = (e: WheelEvent): void => {
+      endIntro();
+      if (r.mode !== 'overview') return;
+      e.preventDefault();
+      r.orbit = clampOrbit({ ...r.orbit, zoom: r.orbit.zoom * Math.exp(e.deltaY * 0.0012) });
+    };
+
+    // Capture phase: runs before the UI's own Escape handling, and stays out of
+    // the way while the checkout modal is open (the modal closes itself).
+    const onKey = (e: KeyboardEvent): void => {
+      if (e.key !== 'Escape') return;
+      const s = appStore.get();
+      if (s.checkoutOpen || s.view !== 'seat') return;
+      actions.goToOverview();
+    };
+
+    el.addEventListener('pointerdown', onDown);
+    el.addEventListener('pointermove', onMove);
+    el.addEventListener('pointerup', onUp);
+    el.addEventListener('pointercancel', onUp);
+    el.addEventListener('wheel', onWheel, { passive: false });
+    window.addEventListener('keydown', onKey, true);
+    return () => {
+      el.removeEventListener('pointerdown', onDown);
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerup', onUp);
+      el.removeEventListener('pointercancel', onUp);
+      el.removeEventListener('wheel', onWheel);
+      window.removeEventListener('keydown', onKey, true);
+    };
+  }, [gl, camera]);
+
+  // ------------------------------------------------------------------------
+  // Frame loop
+  // ------------------------------------------------------------------------
+  useFrame((state, delta) => {
+    const r = rig.current!;
+    const cam = state.camera as PerspectiveCamera;
+    const now = state.clock.elapsedTime;
+    const aspect = state.size.width / Math.max(1, state.size.height);
+
+    // Screen shape changed (resize / rotation): re-frame for the new shape.
+    if (Math.abs(aspect - r.aspect) > 1e-3) {
+      if (isPortrait(aspect) !== isPortrait(r.aspect)) {
+        r.orbit = { ...defaultOverviewOrbit(aspect), zoom: r.orbit.zoom };
+        if (r.mode === 'intro') r.mode = 'overview';
+      }
+      r.aspect = aspect;
+    }
+
+    const apply = (pose: CameraPose): void => {
+      cam.position.set(pose.position.x, pose.position.y, pose.position.z);
+      // Near plane follows the camera height: fine detail at a seat, depth precision in the overview.
+      const near = clamp(pose.position.y * 0.01, 0.1, 2);
+      if (Math.abs(cam.fov - pose.fov) > 1e-4 || Math.abs(cam.near - near) > 1e-3 || cam.far !== 5000) {
+        cam.fov = pose.fov;
+        cam.near = near;
+        cam.far = 5000;
+        cam.updateProjectionMatrix();
+      }
+      cam.lookAt(pose.target.x, pose.target.y, pose.target.z);
+      r.target = pose.target;
+    };
+
+    // A new destination from the store → fly there from wherever we are.
+    const s = appStore.get();
+    const key = s.view === 'seat' && s.seatId ? `seat:${s.seatId}` : 'overview';
+    if (key !== r.goalKey) {
+      r.goalKey = key;
+      let goal: CameraPose;
+      if (key === 'overview') {
+        goal = overviewPose(outline, aspect, r.orbit);
+        r.flightGoal = 'overview';
+      } else {
+        const seat = venue.seatById.get(s.seatId!);
+        if (!seat) {
+          actions.goToOverview(); // unknown seat id: fail safe, back to the overview
+          return;
+        }
+        goal = seatPose(seat.position, venue.config.eyeHeight, aspect, ORIGIN);
+        r.flightGoal = 'seat';
+      }
+      const from: CameraPose = { position: toVec(cam.position), target: r.target, fov: cam.fov };
+      r.flight = planFlight(env, from, goal);
+      r.flightStart = now;
+      r.mode = 'flying';
+    }
+
+    switch (r.mode) {
+      case 'intro': {
+        if (r.introStart < 0) r.introStart = now;
+        const t = (now - r.introStart) / INTRO_SECONDS;
+        apply(overviewPose(outline, aspect, lerpOrbit(r.introFrom, r.orbit, easeInOutCubic(t))));
+        if (t >= 1) r.mode = 'overview';
+        break;
+      }
+      case 'flying': {
+        const t = (now - r.flightStart) / FLIGHT_SECONDS;
+        const pose = r.flight!.sample(easeInOutCubic(t));
+        apply(pose);
+        if (t >= 1) {
+          r.flight = null;
+          if (r.flightGoal === 'seat') {
+            r.mode = 'seat';
+            r.lookBase = anglesOf(pose.position, ORIGIN);
+            r.look = r.lookBase;
+            r.lookDistance = length(sub(ORIGIN, pose.position));
+          } else {
+            r.mode = 'overview';
+          }
+          actions.arrive();
+        }
+        break;
+      }
+      case 'overview': {
+        // Follow the (user-controlled) orbit with a little damping.
+        const goal = overviewPose(outline, aspect, r.orbit);
+        const k = 1 - Math.exp(-delta * 10);
+        apply({
+          position: lerp(toVec(cam.position), goal.position, k),
+          target: lerp(r.target, goal.target, k),
+          fov: lerpNumber(cam.fov, goal.fov, k),
+        });
+        break;
+      }
+      case 'seat': {
+        const eye = toVec(cam.position);
+        const wanted = add(eye, scale(directionOf(r.look), r.lookDistance));
+        const k = 1 - Math.exp(-delta * 18);
+        apply({ position: eye, target: lerp(r.target, wanted, k), fov: lerpNumber(cam.fov, seatFov(aspect), k) });
+        break;
+      }
+    }
+  });
+
+  const seamHooks = useMemo(
+    () => ({
+      isCameraIdle: () => rig.current!.mode === 'overview' || rig.current!.mode === 'seat',
+      cameraMode: () => rig.current!.mode,
+      cameraPose: (): CameraPose => ({ position: toVec(camera.position), target: rig.current!.target, fov: camera.fov }),
+    }),
+    [camera],
+  );
+  return <TestSeam venue={venue} {...seamHooks} />;
 }
