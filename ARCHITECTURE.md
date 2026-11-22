@@ -18,8 +18,10 @@ Decisions with their alternatives are also logged in [DECISIONS.md](DECISIONS.md
           │
           ├──▶ src/scene/        React Three Fiber: wraps buffers in meshes and draws them
           ├──▶ src/camera/       where the camera is and how it flies
-          ├──▶ src/interaction/  turns pointer events on sectors into store actions
+          ├──▶ src/interaction/  turns pointer events on sectors and seats into store actions
           └──▶ src/ui/           Romanian HTML overlay
+
+   src/demo/availability.ts  ← DEMO DATA: deterministic fake "sold" seats (not part of the venue)
                      ▲
                      │ all of them read/write ONE small store: src/state/store.ts
 ```
@@ -159,141 +161,215 @@ wraps them in `BufferGeometry` without changing a number.
 
 ## 4. State: one tiny store (`src/state/store.ts`)
 
-The whole app state is six fields: `view`, `inTransit`, `hoveredSector`,
-`selectedSector`, `seatId`, `checkoutOpen` (+ `sceneReady`). Changes happen
-only through named actions (`selectSector`, `goToOverview`, `arrive`, …), so
-"what happens when you tap" is decided in one place.
+The app state is a handful of fields: `view` (`overview` | `sector` | `seat`),
+`inTransit`, `hoveredSector`, `selectedSector`, `seatId`, `hoveredSeat`,
+`checkoutOpen`, `introPlaying`, `sceneReady`, `sceneFailure`. Changes happen
+only through named actions (`focusSector`, `selectSeat`, `back`,
+`goToOverview`, `arrive`, `endIntro`, …), so "what happens when you tap" is
+decided in one place.
 
-It is ~100 lines on React's `useSyncExternalStore`, with no library:
-- UI components subscribe to just the slice they show;
-- the camera loop reads `appStore.get()` every frame **without** causing React
-  re-renders (important at 60 fps).
+```
+ overview ──tap a sector──► sector focus ──tap a free seat──► seat view
+    ▲                          │  ▲                              │
+    └──── back / "Toate ───────┘  └──── back / "Alt loc" ────────┘
+          sectoarele" / Esc              / Esc (the seat stays gold)
+```
 
-## 5. Rendering (src/scene)
+It is about 170 lines on React's `useSyncExternalStore`, with no library.
+UI components subscribe to just the slice they show. The camera loop reads
+`appStore.get()` every frame **without** causing React re-renders. Browser
+history mirrors the *depth* (0/1/2): one entry per level going in, the back
+gesture goes up one level, and going up through the UI consumes the entries
+(`src/state/history.ts`).
 
-The scene only turns arrays into GPU buffers, plus a few procedural extras
-(pitch markings, track, sky, hills). The rules that keep it fast:
+## 5. Rendering (src/scene) — the "cinematic night" look
 
-- **One draw call for 30,335 seats.** `Seats.tsx` uses a single
-  `InstancedMesh`: one seat geometry drawn 30,335 times, each instance with its
-  own transform matrix (from `position` + `facing`) and colour (price tier).
-  Colours are rewritten only when hover/selection changes, and only for the
-  sector ranges that changed. That's why the generator keeps each sector's seats
-  contiguous (`seatStart … seatEnd`).
-- **Level of detail.** From the overview a seat is 2–7 px wide, so a second
-  instanced mesh with a 4-triangle seat (instead of 20) is drawn when the camera
-  is far. Both meshes **share** the same matrix and colour buffers, so switching
-  costs nothing and colours never desync. Result: ~650k → ~165k triangles in
-  the overview, ~90 draw calls in total.
-- **Stands** are the generator's per-sector solids (`structure.sectorSurfaces`),
-  one mesh each, so a sector can be tinted and tapped on its own.
-- **The roof fades with camera height** (`overviewFactor`): a ghost in the
-  overview, so you can see the sectors under a roof that covers ~98 % of seats in plan,
-  and solid in the seat view. Trusses, fins and columns stop drawing when faded.
-  Nothing on the roof has pointer handlers, so it never steals a tap.
-- **Labels** ("2M2 · de la 40 lei") are DOM chips positioned from inside the
-  render loop through refs (no React re-render per frame). A greedy pass shows
-  hovered/selected and nearest labels first and hides any label that would
-  overlap one already placed, so a phone never shows an unreadable carpet.
-- **No shadows and no postprocessing.** A hemisphere + sun light and ACES tone
-  mapping give the clean, slightly stylised look. Real-time shadows of 30k
-  instances would cost more than everything else together.
-- **Adaptive resolution.** Fill rate is the cost that grows with screen
-  density (DPR 2 ≈ half the frame rate of DPR 1 in our measurements). drei's
-  `PerformanceMonitor` lowers the pixel ratio in 0.5 steps (never below 1) if
-  a device can't hold its frame rate, and raises it again when there is
-  headroom. `?dpr=<n>` pins it for screenshots and comparisons.
-- **The sky dome travels with the camera** (radius 4 km, inside the 5 km far
-  plane), the usual skybox trick; its shader colours by direction only.
+### One set of numbers drives the look (`look.ts`)
 
-Measured cost: about 1.5–2 ms of JavaScript per frame. The rest is pure GPU
-work (see REPORT.md for the numbers and why the headless figures are a floor).
+Every cinematic effect reads four numbers that `<LookDirector/>` writes once
+per frame, before anything else draws:
+
+| number | meaning | comes from |
+|---|---|---|
+| `holo` | 1 = luminous model, 0 = solid materials | camera distance from the centre spot (smoothstep 115 m → 240 m) |
+| `intro` | seconds into the 7 s opening | the wall clock (skips jump it to the end) |
+| `power` | floodlight level 0…1 | the intro clock, group by group |
+| `speed` | camera speed (m/s), smoothed | frame-to-frame camera movement |
+
+`holo` depends on *where the camera is*, not on which view is active. So
+flying from the overview into a sector crossfades from luminous to solid by
+itself, even when a flight is re-targeted mid-air. Nothing has to be animated
+twice.
+
+### What is drawn
+
+- **No surroundings.** A dome shader that follows the camera gives a near-black
+  gradient with a faint warm haze as the lights come on. There is no ground,
+  city or terrain.
+- **Seats: 30,335 instances in three levels of detail, sharing one set of
+  instance buffers** (matrix + colour). Far is 4 triangles, near 20, and
+  detail about 70 (pan, lip, back, headrest, armrest, leg). Detail is drawn
+  only for the focused sector. That sector's near/far copies are hidden by
+  zeroing their matrices, so it is never drawn twice. The instance colour
+  is the state:
+  - overview: tier colour;
+  - focused sector: tier colour (available), dark grey (sold), white (hovered);
+  - other sectors: dimmed.
+
+  A small shader patch (`onBeforeCompile`) also adds `colour × glow` to the
+  emissive term, which is what makes seats read as "fine light" in the overview
+  (glow follows `holo` and `power`).
+- **Your seat** is a separate gold mesh with a soft pulse and a small gold point
+  light. Both fade with the camera's distance to it, so the seat view isn't blown out.
+- **Structure lines.** `EdgesGeometry` of each sector, the roof and the facade,
+  merged into additive HDR line sets. They glow in the luminous overview and
+  fade out up close. The hovered or focused sector gets its own bright outline.
+- **Floodlights** are emissive strips under each roof segment plus instanced
+  lamp quads. They "power on" in sequence during the intro, one roof segment
+  after another. Real lighting is only a hemisphere light and 4 spotlights at
+  the roof edge, because forward shading pays per light per pixel.
+- **LED fascia boards** ("SECTOR 1C · DE LA 150 LEI") run along each ring's
+  front, one board per sector. Prices come from the config. All boards are one
+  canvas texture atlas and one merged geometry, so they cost one draw call. The
+  text is HDR-bright, so it blooms a little and switches on with the lights.
+- **Stand names** ("TRIBUNA I") are DOM labels in the overview, placed in
+  screen space just *outside* the bowl (see DECISIONS 51). The per-sector price
+  pills are gone: the name and price appear on hover and in the sector panel.
+
+### Post-processing (`Effects.tsx`)
+
+The composer renders the scene into a half-float (HDR) buffer, then runs:
+
+1. Bloom (threshold 0.92): only light sources are brighter than 1.0, so only
+   they glow.
+2. Speed blur: a radial blur whose strength is the camera's speed, so it is
+   zero at rest.
+3. ACES Filmic tone mapping.
+4. SMAA anti-aliasing.
+5. Vignette.
+6. Film grain.
+
+Depth of field was left out (DECISIONS 46).
+
+### Adaptive quality
+
+One ladder, stepped by drei's `PerformanceMonitor` when the frame rate drops
+(or rises):
+
+| step | pixel ratio | effects |
+|---|---|---|
+| 0 | device (max 2) | all (bloom with 8 mip levels) |
+| 1 | 0.75 × device | all |
+| 2 | 1 | no film grain, 6 bloom levels |
+| 3 | 1 | also no SMAA and no speed blur, 5 bloom levels |
+
+`?dpr=` and `?quality=high|medium|low` pin it. The level in use is on the
+canvas container (`data-dpr`, `data-quality`).
 
 ## 6. Camera and interaction (src/camera, src/interaction)
 
-**Pure math first** (`cameraMath.ts`, `flight.ts`, all unit-tested):
+**Pure math first** (`cameraMath.ts`, `focus.ts`, `flight.ts`, all unit-tested):
 
 - *Overview framing* computes the exact distance at which the venue's real
-  outline fits the screen for the current aspect ratio. A laptop looks from
-  behind Tribuna II at the main stand (so VIP and press are visible); a portrait
-  phone looks from behind a peluza, so the stadium's long axis runs down the
-  screen and fills it.
-- *Seat pose*: eye = seat + 1.2 m, looking at the centre spot. On tall phone
-  screens the look is tilted down a little so the top half isn't sky.
-  Look-around is clamped to ±75° yaw around the direction to the centre and
-  −50°…+20° pitch.
-- *Flights that never go through the roof.* A seat sits "inside" the
-  structure, and the only clean way in is over the pitch. Each seat gets a
-  **portal**: a point above the pitch in front of it, just above roof height,
-  far enough out that the straight line portal → eye passes *under* every
-  overhang edge (roof leading edge, upper-ring fascia). These edges are derived
-  from the config. A flight = line → smooth Hermite curve between portals →
-  line. Tests fly all 58 sectors from both overviews, every pair of seats
-  (3,306 flights) and mid-air retargets, and check every sample against the
-  structure. A deliberately naive straight-line flight is caught (control test).
+  outline fits the screen for the current aspect ratio (laptop: from behind
+  Tribuna II; portrait phone: from behind a peluza, long axis down the screen).
+- *Sector focus* (`focus.ts`): a 3/4 view from over the field, 22° to the side
+  and 24° above, FOV 42°. It is framed so the sector fills about 78 % of the
+  screen, including its LED board. Because the camera is always on the field
+  side of the roof edge, the roof never gets in the way.
+- *Seat view* (`seatViewPose`): over the shoulder, 0.85 m behind and 0.3 m above
+  the seated eye point, looking along the seat's facing and slightly down. Your
+  own gold seat and the backs in front are in frame. The exact eye point is
+  still what the sightline maths and tests use (DECISIONS 56). The FOV targets
+  a 90° horizontal view, and tall phone screens get a downward tilt.
+- *Flights never go through the roof.* A seat is "inside" the structure, and
+  the only clean way in is over the pitch. Each seat gets a **portal** above the
+  pitch in front of it, placed so that the line portal → eye passes under every
+  overhang edge derived from the config. A flight is line → Hermite curve →
+  line, with FOV interpolated along it. Tests fly every sector (overview → focus
+  → seat → focus → overview, on laptop and phone), every pair of seats and
+  mid-air retargets, checking every sample against the structure. A control
+  test confirms a naive straight-line flight is caught.
 
 **The rig** (`CameraRig.tsx`) is a small state machine inside `useFrame`:
-`intro → overview ⇄ flying ⇄ seat`. It reads `appStore.get()` each frame (no
-React re-render). When the store's destination changes, it plans a new
-1.5 s ease-in-out flight **from wherever the camera is right now**, using the
-current position, look target and fov. That one rule makes rapid repeated
-taps safe: no queue, no snapping, the last tap wins. `actions.arrive()` is
-called when a flight ends.
+`intro → overview ⇄ flying ⇄ sector ⇄ flying ⇄ seat`. Each frame it reads
+the store's destination (`overview`, `sector:1C` or `seat:1C-R6-S14`). When the
+destination changes, it plans a new flight **from wherever the camera is right
+now** (1.6 s, or 2.2 s into a seat). That one rule makes rapid repeated taps
+safe: no queue and no snapping, and the last tap wins. While seated, a drag
+looks around within limits. Escape goes up one level.
 
-**Rotation and history.** If the phone rotates during a flight or while
-seated, the portrait down-tilt is swapped for the one the new screen shape
-wants, and the user's look is kept. Entering a seat pushes one browser
-history entry, so the phone's back gesture returns to the overview instead of
-leaving the demo (`src/state/history.ts`).
+**Intro.** The camera orbits in from far, low and swung about 140°, while the
+floodlights power on. It runs on the wall clock (7 s) so a slow device doesn't
+get a stretched intro. Any tap, drag, wheel or pinch skips it, and so does
+`prefers-reduced-motion`. The skipping tap is swallowed so it doesn't also
+select a sector.
 
-**Taps vs. drags** (`sectorHandlers.ts`): R3F reports how far the pointer
-moved between down and up (`e.delta`). Under 6 px is a tap, which selects;
-more is the end of an orbit or look-around drag, which is ignored. Hover reacts
-only to a mouse, so a finger never leaves a sticky highlight.
+**Seat picking** (`SeatPicker.tsx`, `seatPicking.ts`): while a sector is
+focused, an invisible InstancedMesh of boxes, one per seat of *that sector
+only*, is raycast by R3F. `instanceId` maps straight to the seat (`seatStart +
+i`). Mouse hover highlights the seat and shows "Rând 6 · Loc 14 · 150 lei ·
+Liber". A tap on a free seat selects it and flies in. Sold seats can't be
+chosen. On touch, a tap on a sold seat takes the nearest free seat within
+28 px on screen, because a seat is about 8 px wide on a phone.
 
-**Test seam** (`TestSeam.tsx`): `window.__clujDemo.sectorScreenPoint(code)`
-projects a point on that sector's treads to screen pixels with the live camera
-(checked to be unobstructed and inside the sector). Playwright then does a
-*real* tap there. It is a read-only window into the app, not a shortcut around
-the UI.
+**Taps vs. drags**: R3F reports how far the pointer moved between down and up
+(`e.delta`). Under 6 px is a tap; more is the end of a drag and is ignored.
+Hover reacts only to a mouse, so a finger never leaves a sticky highlight.
+
+**Demo availability** (`src/demo/availability.ts`, clearly labelled DEMO
+DATA): deterministic fake sales. Group "bookings" of 1–6 adjacent seats,
+weighted toward lower rows and the centre, reach an exact target between
+62 and 73 % sold per sector. Press seats are never for sale. It is kept out of
+the venue config on purpose; a real system would replace this module with an
+API call.
+
+**Test seam** (`TestSeam.tsx`), a read-only window used by Playwright:
+- `sectorScreenPoint(code)` and `seatScreenPoint(seatId)` project a point
+  with the live camera, check that it's unobstructed by UI, and raycast to
+  confirm a real tap there hits that sector or seat.
+- `availableSeat(code)` finds a free seat a tap can reach.
+
+Playwright then does *real* taps.
 
 ## 7. UI overlay (src/ui)
 
 Plain React + CSS, every string in `strings.ts` (Romanian). The overlay root is
-`pointer-events: none`, so drags and taps fall through to the canvas; only
-panels and buttons take events. Each component subscribes to just the store
-slice it shows.
+`pointer-events: none`, so drags and taps reach the canvas; only panels and
+buttons take events. The look is dark glass: translucent near-black panels,
+thin borders, quiet type, and gold kept for the one action that matters ("Cumpără").
 
+- **Intro title card** ("CLUJ ARENA · Vezi terenul de pe locul tău",
+  "Atinge oriunde pentru a începe"). The rest of the UI waits until it ends.
 - Header with the venue name and the permanent **"Demo – geometrie aproximativă"** badge.
-- **Prețuri demo** legend from the config's tiers: a bottom price bar on
-  laptops, a collapsible bar on phones.
-- Context hints ("Atinge/Apasă pe un sector…", "Te ducem la locul tău…") and
-  a desktop hover card.
-- **Seat panel**: stand, ring, sector, row, seat, price. "Cumpără" is
-  disabled for the press sector, and "Înapoi la stadion" returns to the
-  overview. It is a bottom sheet on phones and a card on laptops.
+- **Overview:** hint pill and the "Prețuri demo" legend.
+- **Sector bar** (level 2): stand · sector · "de la 150 lei", free/total seats,
+  the seat-state legend (liber / vândut / locul tău), and "Toate sectoarele".
+- **Hover card** (desktop): a sector's name and price in the overview; a
+  seat's row, number, price and state in the sector focus.
+- **Seat bar** (level 3): "Tribuna I · Sector 1C · Rând 8 · Loc 6 · 150 lei",
+  a gold "Cumpără", and "Alt loc" (back to the sector). It is a slim pill on
+  laptops and a bottom card on phones.
 - **Fake checkout**: a prominent **"Demo – fără plată reală"** banner,
   1–4 adjacent seats and a total, with no payment or personal-data fields.
   It is an accessible dialog: focus is trapped, Escape and backdrop close it,
   and focus returns to the button.
-- Phones in landscape (short screens) get a compact seat card and a
-  two-column checkout that fits without scrolling.
-- A loader until the first frame, and full-screen pages for the failure cases:
-  an invalid config (validation messages), an unknown `?venue=`, and 3D that
-  can't run (no WebGL, a lost GPU context, or a crash inside the scene, caught
-  by an error boundary). Each has a reload button instead of a blank page.
+- A loader until the first frame, and full-screen pages for the failure cases
+  (invalid config, unknown `?venue=`, no WebGL, lost GPU context, scene crash).
 
 ## 8. Testing strategy
 
 | Layer | How it is tested |
 |---|---|
 | Reference curve math | exact identities vs. brute-force numeric integration; continuity at segment joins; level-set property |
-| Venue data | real JSON: seat count = 30,335 (+ VIP/press/wheelchair split), unique ids, min spacing ≥ seat width (spatial hash over all seats), each seat on its row and facing the field, C-values for every seat |
+| Venue data | real JSON: seat count = 30,335 (+ VIP/press/wheelchair split), unique ids, min spacing ≥ seat width, each seat on its row and facing the field, C-values for every seat |
 | Validation | 19 deliberately broken configs, each must fail with a specific, located message |
 | UI helpers | price formatting, seat summaries, config-error rendering |
 | Meshes | finite, in range, winding agrees with normals, roof above every spectator |
-| Camera math | pure functions: framing fits the outline on laptop + phone, clamps, portrait tilt, and roof-safe flights for every sector, every seat pair and mid-air retargets (with a control test) |
-| Whole app | Playwright on the production build: real taps per stand at 1440×900 and 390×844, screenshots, zero console errors, FPS |
+| Camera math | framing fits the outline on laptop + phone, clamps, portrait tilt; roof-safe flights for every sector (overview ⇄ focus ⇄ seat view), every seat pair and mid-air retargets (with a control test) |
+| Demo availability | deterministic; 60–75 % sold in every sector; press never for sale; sales come in clusters; lower and central rows sell first |
+| Seat picking | a ray from the real sector-focus camera (laptop and phone) to sampled seats picks exactly that seat; touch forgiveness picks the nearest free seat and never a sold one |
+| Whole app | Playwright on the production build. Real taps through intro → overview → sector → seat → checkout → back at every level, at 1440×900 and 390×844, with stills of each stage. Robustness: the skipping tap, rapid taps, Escape mid-flight, corner and press sectors, browser back. Zero console errors. FPS and draw calls per stage. A video of the whole flow. |
 
 ## 9. Extension point: a theatre ("horseshoe") template — what it would touch
 
