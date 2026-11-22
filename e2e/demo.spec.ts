@@ -32,6 +32,9 @@ for (const vp of VIEWPORTS) {
       await waitForOverview(page);
       await expect(page.getByText('Cluj Arena').first()).toBeVisible();
       await expect(page.getByText('Demo – geometrie aproximativă')).toBeVisible();
+      // The overview hint must be visible (desktop: mouse wording; phone: touch wording).
+      await expect(page.getByText(/un sector pentru a vedea priveliștea/)).toBeVisible();
+      await expect(page.getByText('Prețuri demo')).toBeVisible();
       await settle(page, 1500);
       await page.screenshot({ path: `screenshots/${vp.name}-overview.png` });
 

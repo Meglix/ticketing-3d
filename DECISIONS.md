@@ -265,3 +265,10 @@ Each entry: **decision** — alternatives — why. Newest at the bottom.
     `THREE.Clock` deprecation *warning* with three 0.187, which we can't fix
     without an upstream release. The seat view draws all seats at full detail
     (~645k triangles), which is fine for laptops, and the adaptive DPR covers phones.
+
+42. **The "hide the hint while the legend is open" rule is phone-only.** It
+    was first written unscoped, and the desktop legend is always open, so the
+    overview hint disappeared on laptops. The final screenshot review caught
+    it, and the e2e now asserts that the hint and legend are visible on both
+    viewports.
+

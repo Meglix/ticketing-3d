@@ -289,7 +289,7 @@ slice it shows.
 |---|---|
 | Reference curve math | exact identities vs. brute-force numeric integration; continuity at segment joins; level-set property |
 | Venue data | real JSON: seat count = 30,335 (+ VIP/press/wheelchair split), unique ids, min spacing ≥ seat width (spatial hash over all seats), each seat on its row and facing the field, C-values for every seat |
-| Validation | 15 deliberately broken configs, each must fail with a specific message |
+| Validation | 19 deliberately broken configs, each must fail with a specific, located message |
 | UI helpers | price formatting, seat summaries, config-error rendering |
 | Meshes | finite, in range, winding agrees with normals, roof above every spectator |
 | Camera math | pure functions: framing fits the outline on laptop + phone, clamps, portrait tilt, and roof-safe flights for every sector, every seat pair and mid-air retargets (with a control test) |

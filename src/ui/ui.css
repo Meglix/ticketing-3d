@@ -271,10 +271,13 @@ button {
   pointer-events: none;
 }
 
-/* While the phone legend is expanded the hint would be pushed up over the
-   stadium; the open legend is the more useful of the two. */
-.ui-bottom:has(.ui-legend.is-open) .ui-hint {
-  display: none;
+/* Phones only: while the legend is expanded the hint would be pushed up over
+   the stadium; the open legend is the more useful of the two. (On desktop the
+   legend is a slim bar that is always open, and the hint must stay.) */
+@media (max-width: 767px) {
+  .ui-bottom:has(.ui-legend.is-open) .ui-hint {
+    display: none;
+  }
 }
 
 /* ---- legend (phone: bottom bar; desktop: price bar at the bottom) ------------ */
