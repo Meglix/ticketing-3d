@@ -411,3 +411,54 @@ Each entry: **decision** — alternatives — why. Newest at the bottom.
     arrived a frame later. The app wasn't at fault (traced with per-frame timing:
     no single long frame, just 400–500 ms frames). The V1 screenshots are kept in
     `screenshots/v1/`.
+
+## V2 — independent review, round 1
+
+61. **A fresh reviewer agent graded the stills against the reference frames**
+    (nine-item checklist from the brief). PASS: black background without
+    surroundings; readable LED price boards. PARTIAL: night lighting, luminous
+    overview, seat states, gold seat, seat view, flight smoothness (stills
+    can't show it), UI. Changed after the review:
+    - **UI:** a header scrim and an opaque demo badge, because LED boards and
+      floodlight strips ran through the header text. Separators that can't dangle
+      at line ends on phones (`DotList`). A shadow on the intro title.
+    - **Seat states:** hover is cyan, raised and 12 % larger, because "brighter"
+      was invisible on the silver VIP seats. A gold pin marks your seat in the
+      sector focus, where a seat is about 12 px wide.
+    - **Seat view:** the camera sits 0.14 m above the eye point, pitched 13°
+      down, so the seat is no longer hidden behind the UI bar. On portrait
+      screens the larger of that pitch and the portrait tilt applies, not both,
+      so the seat no longer fills about 40 % of a phone. A soft fill light
+      follows the camera, so the backs of the rows in front (they face away from
+      the floodlights) aren't black silhouettes. The gold seat keeps a visible glow.
+    - **Detail seat:** a bucket backrest (forward-angled side wings) instead of
+      a flat plank.
+    - **Overview:** seat glow down a third, a bottom fade, no base opacity on
+      the roof edge lines (a stray dashed line in the sector focus), and
+      floodlights a little brighter and cooler.
+    **Not done, on purpose:** a monochrome overview. The reviewer preferred
+    the reference's single navy hue, but the brief asks for seats "tinted by
+    tier", so the tints stay at lower intensity. Floodlight glare sprites and
+    light cones, a curved shell seat model and solid goal frames are listed as
+    remaining gaps in REPORT.md.
+
+62. **Lights stay in the scene with intensity 0 instead of toggling `visible`.**
+    three.js keys shader programs on the number of lights, so making the gold
+    point light visible on the first sector tap recompiled every lit material,
+    a hitch exactly when the camera starts to fly. The new fill light follows
+    the same rule.
+
+63. **The flow video is rendered frame by frame on a virtual clock (`?capture`).**
+    Alternative: Playwright's real-time screen recording, which was the first
+    version: 4 min 11 s at about 2.5 fps and 22.7 MB, a slideshow that can't
+    show whether a flight is smooth. In capture mode the canvas runs
+    `frameloop="never"` and `performance.now()` plus R3F's clock follow a
+    virtual time that the spec advances by 40 ms per frame, with a screenshot
+    after each frame, encoded to 25 fps VP8. Every frame is the real app with
+    real pointer input; only time is simulated. That is stated in the spec,
+    the module and REPORT.md. The real-time recording wasn't committed (size).
+
+64. **Renderer statistics are whole-frame totals.** With the post-processing
+    composer, three.js reset its counters on every pass, and the perf spec read
+    "1 draw call, 1 triangle" (the last full-screen pass). `RendererProbe`
+    now switches `info.autoReset` off and resets once at the start of each frame.
