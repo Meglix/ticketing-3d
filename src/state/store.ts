@@ -22,6 +22,8 @@ export interface AppState {
   /** Seat id the camera sits on in the seat view. */
   seatId: string | null;
   checkoutOpen: boolean;
+  /** True once the 3D scene has rendered its first frame (the UI shows a loader until then). */
+  sceneReady: boolean;
 }
 
 const initialState: AppState = {
@@ -31,6 +33,7 @@ const initialState: AppState = {
   selectedSector: null,
   seatId: null,
   checkoutOpen: false,
+  sceneReady: false,
 };
 
 type Listener = () => void;
@@ -102,6 +105,10 @@ export const actions = {
 
   closeCheckout(): void {
     set({ checkoutOpen: false });
+  },
+
+  markSceneReady(): void {
+    set({ sceneReady: true });
   },
 };
 
