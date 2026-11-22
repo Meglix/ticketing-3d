@@ -217,8 +217,10 @@ twice.
   - other sectors: dimmed.
 
   A small shader patch (`onBeforeCompile`) also adds `colour × glow` to the
-  emissive term, which is what makes seats read as "fine light" in the overview
-  (glow follows `holo` and `power`).
+  emissive term, but only on the *backrests* (a `glowMask` vertex attribute),
+  and darkens the seat bodies as `holo` rises. In the overview each row then
+  reads as a thin line of light over dark treads, the "fine light" of the
+  reference, still tinted by price tier. The pitch and track dim as well.
 - **Your seat** is a separate gold mesh with a soft pulse and a small gold point
   light. Both fade with the camera's distance to it, so the seat view isn't blown out.
 - **Structure lines.** `EdgesGeometry` of each sector, the roof and the facade,
@@ -277,16 +279,21 @@ canvas container (`data-dpr`, `data-quality`).
   and 24° above, FOV 42°. It is framed so the sector fills about 78 % of the
   screen, including its LED board. Because the camera is always on the field
   side of the roof edge, the roof never gets in the way.
-- *Seat view* (`seatViewPose`): over the shoulder, 0.85 m behind and 0.14 m above
-  the seated eye point, looking along the seat's facing and slightly down. Your
-  own gold seat and the backs in front are in frame. The exact eye point is
-  still what the sightline maths and tests use (DECISIONS 56). The FOV targets
-  a 90° horizontal view, and tall phone screens get a downward tilt.
+- *Seat view* (`seatViewPose`): over the shoulder, 0.85 m behind and 0.3 m above
+  the seated eye point, looking along the seat's facing. The initial pitch is
+  *solved* so that the top of your own seat back lands just above the UI
+  (a fixed screen height per screen shape). Your gold seat and, over it, the
+  backs of the rows in front are then always in frame, on every seat. The exact
+  eye point is still what the sightline maths and tests use (DECISIONS 56, 65).
+  The FOV targets a 90° horizontal view.
 - *Flights never go through the roof.* A seat is "inside" the structure, and
   the only clean way in is over the pitch. Each seat gets a **portal** above the
   pitch in front of it, placed so that the line portal → eye passes under every
   overhang edge derived from the config. A flight is line → Hermite curve →
-  line, with FOV interpolated along it. Tests fly every sector (overview → focus
+  line, with FOV interpolated along it. The view *direction* is interpolated
+  too (yaw on the shortest arc, pitch linearly), not the look-at point, so a
+  half turn is spread over the whole flight and the camera never tips past
+  its start and end pitch (DECISIONS 65). Tests fly every sector (overview → focus
   → seat → focus → overview, on laptop and phone), every pair of seats and
   mid-air retargets, checking every sample against the structure. A control
   test confirms a naive straight-line flight is caught.

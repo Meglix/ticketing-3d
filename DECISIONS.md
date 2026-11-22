@@ -462,3 +462,39 @@ Each entry: **decision** — alternatives — why. Newest at the bottom.
     composer, three.js reset its counters on every pass, and the perf spec read
     "1 draw call, 1 triangle" (the last full-screen pass). `RendererProbe`
     now switches `info.autoReset` off and resets once at the start of each frame.
+
+## V2 — independent review, round 2
+
+65. **A second fresh reviewer**, given the new stills plus a frame sequence of
+    the seat flight from the video, rated black background and the gold seat
+    PASS. Everything else was PARTIAL and "fixable in WebGL". Changed:
+    - **The flight spin (root cause):** flights interpolated the look-*target
+      point*. From the sector focus (looking at the stand) to the seat view
+      (looking back across the field) that point swept under the moving camera,
+      so the view tipped straight down and spun about 180° in a few frames.
+      Flights now interpolate the view *direction*: yaw on the shortest arc,
+      pitch linearly. Pitch can't leave the range of its two endpoints, and the
+      turn is spread over the whole flight. A regression test fails on the old
+      code and passes on the new one.
+    - **Seat-view framing solved from geometry:** the camera is back at 0.3 m
+      above the eye point, so the rows in front show over your own seat back.
+      The initial pitch is computed so that the top of your seat back projects
+      to a fixed screen height just above the UI: NDC −0.62 on landscape, −0.42
+      on portrait. Earlier "N° down" offsets put the seat at different heights
+      on lower- and upper-ring seats, and filled about 30 % of a phone with it.
+      A unit test projects every sector's seat with three.js.
+    - **"Fine light" overview:** only the seat *backrests* emit (a `glowMask`
+      vertex attribute in the near/far LODs), and the seat bodies' lit colour
+      drops to 25 % in the luminous mode. Each row then reads as a thin line of
+      light over dark treads, as in the reference, while keeping the tier tint
+      the brief asks for. The pitch and track dim by 45 % in the overview.
+      Structure lines scale with the screen size: additive lines on a phone
+      added up to white.
+    - **LED boards:** the tier accent bar was read as a stray "|" and is
+      removed. The text is up to about 65 % of the board height.
+    - **Hover** is a saturated cyan, because a pale cyan read as "available"
+      on silver VIP seats.
+    - **Glass panels** are darker and barely saturated, so they no longer take
+      on the pitch's green. Also: the tier dot is no longer clipped, the hint
+      wraps in balanced lines, the demo badge is opaque, the intro title has a
+      dark pool behind it, and the ambient light is dimmer.
