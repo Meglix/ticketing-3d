@@ -14,7 +14,7 @@ checkout. UI in Romanian.
 |---|---|---|
 | ![overview](screenshots/desktop-2-overview.jpg) | ![sector](screenshots/desktop-6-sector-with-gold-seat.jpg) | ![seat](screenshots/desktop-7-seat-tribuna-II-2M2.jpg) |
 
-A recording of the whole flow: [screenshots/flow.webm](screenshots/flow.webm).
+A video of the whole flow: [screenshots/flow.webm](screenshots/flow.webm) (25 fps, rendered frame by frame by the real app on a virtual clock, because the build machine has no GPU).
 
 ## Run locally
 
@@ -34,6 +34,8 @@ Open http://localhost:5173. Useful URL parameters:
 - `?venue=example-arena`: the second, fictional venue
 - `?dpr=1.5`: pin the render resolution (otherwise it adapts to the device's speed)
 - `?quality=high|medium|low`: pin the post-processing tier (otherwise it adapts)
+- `?capture`: test tooling only. The scene stops its own loop and runs on a virtual clock
+  stepped by `e2e/flow.spec.ts`, which renders the flow video frame by frame (see DECISIONS 63)
 
 Checks:
 
