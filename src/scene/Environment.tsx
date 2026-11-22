@@ -1,8 +1,10 @@
+import { useFrame } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import {
   BackSide,
   BoxGeometry,
   BufferGeometry,
+  type Mesh,
   Color,
   Float32BufferAttribute,
   IcosahedronGeometry,
@@ -28,6 +30,9 @@ import { PALETTE } from './palette.ts';
 
 /** Late-afternoon sun, from the south-west (behind Tribuna I and Peluza I). */
 export const SUN_DIRECTION = new Vector3(-0.45, 0.55, -0.7).normalize();
+
+/** Inside the camera's far plane (5000 m) with margin; the dome follows the camera. */
+const SKY_RADIUS = 4000;
 
 /** Deterministic pseudo-random numbers so the backdrop is identical on every load. */
 function mulberry32(seed: number) {
@@ -146,6 +151,14 @@ function backdropProps(venue: Venue): { blocks: Prop[]; trees: Prop[] } {
 }
 
 export function Environment({ venue }: { venue: Venue }) {
+  // The sky dome travels with the camera, so it is always inside the far
+  // plane (the rig uses far = 5000 m) whatever the camera does. Its shader
+  // colours by direction only, so moving it changes nothing visually.
+  const skyRef = useRef<Mesh>(null);
+  useFrame(({ camera }) => {
+    skyRef.current?.position.copy(camera.position);
+  });
+
   const ref = venue.config.layout.referenceLine;
   const sky = useMemo(skyMaterial, []);
   const props = useMemo(() => backdropProps(venue), [venue]);
@@ -221,8 +234,8 @@ export function Environment({ venue }: { venue: Venue }) {
       <hemisphereLight args={['#dce9ff', '#8c7f6c', 1.15]} />
       <directionalLight color="#ffe6c4" intensity={2.4} position={SUN_DIRECTION.clone().multiplyScalar(400)} />
       <ambientLight intensity={0.15} />
-      <mesh material={sky} frustumCulled={false} renderOrder={-1}>
-        <sphereGeometry args={[7000, 32, 16]} />
+      <mesh ref={skyRef} material={sky} frustumCulled={false} renderOrder={-1}>
+        <sphereGeometry args={[SKY_RADIUS, 32, 16]} />
       </mesh>
       <mesh geometry={geos.ground} material={mats.ground} position-y={-0.05} />
       <mesh geometry={geos.plaza} material={mats.plaza} />

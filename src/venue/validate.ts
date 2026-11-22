@@ -4,9 +4,10 @@ import { VenueConfigSchema, type SectorConfig, type VenueConfig } from './schema
 
 /**
  * Turning raw JSON into a trusted VenueConfig. Two stages, both fail fast:
- *  1. zod: shape, types, ranges.
+ *  1. zod: shape, types, ranges. All shape problems are reported together.
  *  2. semantic checks that zod can't express (cross-references, geometry,
- *     capacity totals). All problems are collected and reported together.
+ *     capacity totals), run only once the shape is valid (they need a typed
+ *     config). All semantic problems are again reported together.
  */
 
 export class VenueConfigError extends Error {
@@ -23,9 +24,24 @@ export class VenueConfigError extends Error {
 /** Allowed disagreement between a row's rakeDeg and its slope to the next row. */
 export const RAKE_TOLERANCE_DEG = 1.5;
 
-function formatPath(path: ReadonlyArray<PropertyKey>): string {
+/**
+ * JSON path of a zod issue, e.g. `stands[2].rings[2].sectors[4] (2M2).rows[0].seats`.
+ * Sector codes are added from the raw data, because index-only paths are hard
+ * to find in a 4,000-line file.
+ */
+function formatPath(raw: unknown, path: ReadonlyArray<PropertyKey>): string {
   let out = '';
-  for (const p of path) out += typeof p === 'number' ? `[${p}]` : `${out ? '.' : ''}${String(p)}`;
+  let node: unknown = raw;
+  let parentKey: PropertyKey | undefined;
+  for (const p of path) {
+    out += typeof p === 'number' ? `[${p}]` : `${out ? '.' : ''}${String(p)}`;
+    node = node && typeof node === 'object' ? (node as Record<PropertyKey, unknown>)[p] : undefined;
+    if (typeof p === 'number' && parentKey === 'sectors' && node && typeof node === 'object') {
+      const code = (node as { code?: unknown }).code;
+      if (typeof code === 'string') out += ` (${code})`;
+    }
+    parentKey = p;
+  }
   return out || '(root)';
 }
 
@@ -36,7 +52,7 @@ export function parseVenueConfig(raw: unknown): VenueConfig {
   if (!parsed.success) {
     throw new VenueConfigError(
       id,
-      parsed.error.issues.map((i) => `${formatPath(i.path)}: ${i.message}`),
+      parsed.error.issues.map((i) => `${formatPath(raw, i.path)}: ${i.message}`),
     );
   }
   const issues = semanticIssues(parsed.data);
@@ -185,24 +201,42 @@ export function semanticIssues(config: VenueConfig): string[] {
   }
 
   // --- field of play fits inside the bowl -----------------------------------
+  // fieldEdge = signed distance from the reference line of the track's outer
+  // edge (or the pitch corner when there is no track) at its closest point to
+  // the stands: > 0 means the field pokes out of the bowl; rows must lie behind it.
   const track = config.track;
+  let fieldEdge = -Infinity;
+  let fieldEdgeBearing = 0;
   if (track) {
     const outerR = track.innerRadius + track.lanes * track.laneWidth;
     const hx = track.straightLength / 2;
-    for (let a = 0; a <= 360; a += 5) {
+    for (let a = 0; a < 360; a += 1) {
       const rad = (a * Math.PI) / 180;
       const cx = Math.cos(rad) >= 0 ? hx : -hx;
-      const p = { x: cx + outerR * Math.cos(rad), z: outerR * Math.sin(rad) };
-      if (signedDistance(spec, p) > 0) {
-        add(`track: its outer edge reaches outside the bowl reference line (at bearing ${a}°)`);
-        break;
-      }
+      const sd = signedDistance(spec, { x: cx + outerR * Math.cos(rad), z: outerR * Math.sin(rad) });
+      if (sd > fieldEdge) [fieldEdge, fieldEdgeBearing] = [sd, a];
     }
+    if (fieldEdge > 0) add(`track: its outer edge reaches outside the bowl reference line (at bearing ${fieldEdgeBearing}°)`);
     if (config.pitch.width / 2 > track.innerRadius) add('pitch: wider than the track infield');
     if (config.pitch.length / 2 > hx + track.innerRadius) add('pitch: longer than the track infield');
   } else {
-    const corner = { x: config.pitch.length / 2, z: config.pitch.width / 2 };
-    if (signedDistance(spec, corner) > 0) add('pitch: reaches outside the bowl reference line');
+    fieldEdge = signedDistance(spec, { x: config.pitch.length / 2, z: config.pitch.width / 2 });
+    if (fieldEdge > 0) add('pitch: reaches outside the bowl reference line');
+  }
+
+  // Rows must lie behind the field of play (checked only when the field itself
+  // fits; otherwise every row would repeat the same root cause).
+  if (fieldEdge < 0) {
+    for (const { where, sector } of located) {
+      for (const row of sector.rows) {
+        if (row.distance < fieldEdge + 0.5) {
+          add(
+            `${where} row ${row.row}: distance ${row.distance} m puts it on the field of play ` +
+              `(the ${track ? 'track' : 'pitch'} reaches ${fieldEdge.toFixed(2)} m from the reference line)`,
+          );
+        }
+      }
+    }
   }
 
   // --- roof -------------------------------------------------------------------
@@ -214,6 +248,14 @@ export function semanticIssues(config: VenueConfig): string[] {
     }
     roof.segments.forEach((seg, i) => {
       if (!(seg.to > seg.from)) add(`roof.segments[${i}]: to must be greater than from`);
+      if (seg.to - seg.from > perimeter + SPAN_EPS) {
+        add(`roof.segments[${i}]: longer than the whole reference line (${perimeter.toFixed(1)} m)`);
+      }
+      roof.segments.forEach((other, j) => {
+        if (j > i && seg.to > seg.from && other.to > other.from && intervalsOverlapOnCircle(seg.from, seg.to, other.from, other.to, perimeter)) {
+          add(`roof.segments[${i}] overlaps roof.segments[${j}]`);
+        }
+      });
     });
   }
 

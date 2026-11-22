@@ -1,5 +1,6 @@
+import { PerformanceMonitor } from '@react-three/drei';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { type ReactNode, useMemo, useRef } from 'react';
+import { type ReactNode, useMemo, useRef, useState } from 'react';
 import { ACESFilmicToneMapping, SRGBColorSpace } from 'three';
 import { actions } from '../state/store.ts';
 import type { Venue } from '../venue/loadVenue.ts';
@@ -30,7 +31,37 @@ function FirstFrame() {
   return null;
 }
 
+/** `?dpr=1.5` pins the pixel ratio (screenshots, perf comparisons); otherwise it adapts. */
+function pinnedDpr(): number | null {
+  const v = Number(new URLSearchParams(window.location.search).get('dpr'));
+  return Number.isFinite(v) && v > 0 ? Math.min(3, Math.max(0.5, v)) : null;
+}
+
+/**
+ * Adaptive resolution: fill rate is the cost that grows with screen density
+ * (measured: DPR 2 roughly halves the frame rate of DPR 1). drei's
+ * PerformanceMonitor samples the frame rate; if a device can't hold it, the
+ * pixel ratio steps down by 0.5 (never below 1), and back up when there is
+ * headroom. After a few flip-flops it settles at 1.
+ */
+function useAdaptiveDpr() {
+  const pinned = useMemo(pinnedDpr, []);
+  const max = Math.min(2, window.devicePixelRatio || 1);
+  const [dpr, setDpr] = useState(pinned ?? max);
+  const monitor =
+    pinned === null ? (
+      <PerformanceMonitor
+        flipflops={3}
+        onDecline={() => setDpr((d) => Math.max(1, d - 0.5))}
+        onIncline={() => setDpr((d) => Math.min(max, d + 0.5))}
+        onFallback={() => setDpr(1)}
+      />
+    ) : null;
+  return { dpr, monitor };
+}
+
 export function Stage({ venue, children }: { venue: Venue; children?: ReactNode }) {
+  const { dpr, monitor } = useAdaptiveDpr();
   const labels = useMemo(() => buildLabelModels(venue), [venue]);
   const registry = useMemo(() => createLabelRegistry(labels.length), [labels]);
   const b = venue.structure.bounds;
@@ -38,7 +69,7 @@ export function Stage({ venue, children }: { venue: Venue; children?: ReactNode 
   return (
     <div className="stage">
       <Canvas
-        dpr={[1, 2]}
+        dpr={dpr}
         gl={{ antialias: true, powerPreference: 'high-performance' }}
         // A sensible default view (high above Tribuna I); the camera rig takes over.
         camera={{ fov: 40, near: 1, far: 9000, position: [0, b.halfLength * 1.9, -b.halfLength * 1.55] }}
@@ -46,6 +77,11 @@ export function Stage({ venue, children }: { venue: Venue; children?: ReactNode 
           gl.toneMapping = ACESFilmicToneMapping;
           gl.toneMappingExposure = 1.0;
           gl.outputColorSpace = SRGBColorSpace;
+          // GPU reset / memory pressure: don't leave a frozen canvas, show the fallback.
+          gl.domElement.addEventListener('webglcontextlost', (e) => {
+            e.preventDefault();
+            actions.failScene('context-lost');
+          });
           // Dev-only handle for screenshots / perf checks from Playwright.
           if (import.meta.env.DEV) Object.assign(window, { __stage: { gl, scene, camera } });
         }}
@@ -58,6 +94,7 @@ export function Stage({ venue, children }: { venue: Venue; children?: ReactNode 
         <Fixtures venue={venue} />
         <LabelTracker models={labels} registry={registry} />
         <FirstFrame />
+        {monitor}
         {children}
       </Canvas>
       <LabelLayer models={labels} registry={registry} />

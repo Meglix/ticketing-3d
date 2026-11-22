@@ -271,7 +271,13 @@ button {
   pointer-events: none;
 }
 
-/* ---- legend (phone: bottom bar; desktop: top-right card) ------------------- */
+/* While the phone legend is expanded the hint would be pushed up over the
+   stadium; the open legend is the more useful of the two. */
+.ui-bottom:has(.ui-legend.is-open) .ui-hint {
+  display: none;
+}
+
+/* ---- legend (phone: bottom bar; desktop: price bar at the bottom) ------------ */
 .ui-legend {
   position: relative;
   width: 100%;
@@ -1013,6 +1019,142 @@ button {
 
   .ui-modal__actions {
     grid-template-columns: 1fr auto;
+  }
+}
+
+/* ---- short landscape screens (a phone turned sideways, e.g. 844×390) ---------
+   Width alone would select the desktop card, which covered ~74 % of the height.
+   Here the panel becomes a compact card on the right and the checkout tightens
+   so it fits without scrolling. Comes after the desktop block to override it. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .ui-header {
+    top: calc(8px + var(--safe-top));
+    left: calc(8px + var(--safe-left));
+  }
+
+  .ui-brand {
+    padding: 5px 12px 5px 8px;
+  }
+
+  .ui-brand__name {
+    font-size: 15px;
+  }
+
+  .ui-brand__dot,
+  .ui-brand__tagline {
+    display: none;
+  }
+
+  .ui-seat {
+    left: auto;
+    right: calc(8px + var(--safe-right));
+    bottom: calc(8px + var(--safe-bottom));
+    width: 340px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border-bottom: 1px solid var(--ui-border);
+  }
+
+  .ui-seat__stand {
+    font-size: 15px;
+  }
+
+  .ui-seat__ring {
+    font-size: 12px;
+  }
+
+  .ui-seat__grid {
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .ui-seat__grid > div {
+    padding: 4px 8px;
+  }
+
+  .ui-seat__grid dd {
+    font-size: 16px;
+  }
+
+  .ui-seat__note {
+    margin-top: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+
+  .ui-seat__price {
+    margin: 6px 0;
+    padding-top: 6px;
+  }
+
+  .ui-seat__price-value {
+    font-size: 18px;
+  }
+
+  .ui-seat__actions .ui-btn {
+    min-height: 40px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  .ui-seat__drag {
+    display: none;
+  }
+
+  .ui-modal-backdrop {
+    padding: 6px;
+  }
+
+  /* Use the width: event and seat summaries side by side, everything else full width. */
+  .ui-modal {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-content: start;
+    width: min(640px, 100%);
+    padding-bottom: 10px;
+  }
+
+  .ui-modal > * {
+    grid-column: 1 / -1;
+  }
+
+  .ui-modal > .ui-modal__block:not(.ui-modal__qty) {
+    grid-column: auto;
+  }
+
+  .ui-modal > .ui-modal__seat {
+    margin-left: 0;
+  }
+
+  .ui-modal__banner {
+    padding: 7px 56px 7px 14px;
+  }
+
+  .ui-modal__title {
+    margin: 8px 14px 0;
+    font-size: 17px;
+  }
+
+  .ui-modal__block {
+    margin: 6px 14px 0;
+    padding: 6px 10px;
+  }
+
+  .ui-modal__total {
+    margin: 8px 14px 0;
+    padding-top: 6px;
+  }
+
+  .ui-modal__total strong {
+    font-size: 20px;
+  }
+
+  .ui-modal__actions {
+    margin: 8px 14px 0;
+  }
+
+  .ui-modal__actions .ui-btn {
+    min-height: 40px;
   }
 }
 

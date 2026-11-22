@@ -11,6 +11,14 @@ const files = import.meta.glob<unknown>('../../venues/*.json', { eager: true, im
 
 export const DEFAULT_VENUE_ID = 'cluj-arena';
 
+/** `?venue=` names a venue that has no JSON file (distinct from an invalid config). */
+export class UnknownVenueError extends Error {
+  constructor(id: string, known: string[]) {
+    super(`Unknown venue "${id}". Available: ${known.join(', ')}`);
+    this.name = 'UnknownVenueError';
+  }
+}
+
 function requestedVenueId(): string {
   if (typeof window === 'undefined') return DEFAULT_VENUE_ID;
   return new URLSearchParams(window.location.search).get('venue') ?? DEFAULT_VENUE_ID;
@@ -24,7 +32,7 @@ export function getVenue(): Venue {
   const entry = Object.entries(files).find(([path]) => path.endsWith(`/${id}.json`));
   if (!entry) {
     const known = Object.keys(files).map((p) => p.replace(/^.*\/(.*)\.json$/, '$1'));
-    throw new Error(`Unknown venue "${id}". Available: ${known.join(', ')}`);
+    throw new UnknownVenueError(id, known);
   }
   cached = loadVenue(entry[1]);
   return cached;

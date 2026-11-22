@@ -72,6 +72,7 @@ const TIERS: PriceTier[] = [
   { id: 'p25', label: '25 lei', price: 25, color: '#4c6fd6' },
   { id: 'p30', label: '30 lei', price: 30, color: '#7b5bd6' },
   { id: 'p40', label: '40 lei', price: 40, color: '#b45bc9' },
+  { id: 'p50', label: '50 lei', price: 50, color: '#d0569c' },
   { id: 'p60', label: '60 lei', price: 60, color: '#e0607e' },
   { id: 'p100', label: '100 lei', price: 100, color: '#f08a3e' },
   { id: 'vip', label: 'VIP · 150 lei', price: 150, color: '#d9a520' },
@@ -140,7 +141,7 @@ const standDrafts: Array<{ id: string; name: string; rings: Array<{ ring: number
         ring: 1,
         name: 'Inelul 1 (inferior)',
         drafts: sectors(1, CENTRE.T1, T1_LOWER_B, ['A1', 'A2', 'B', 'C', 'D', 'E', 'F1', 'F2'],
-          ['p25', 'p30', 'p40', 'vip', 'vip', 'p40', 'p30', 'p25'], LOWER, { ...vip('C'), ...vip('D') }),
+          ['p25', 'p30', 'p50', 'vip', 'vip', 'p50', 'p30', 'p25'], LOWER, { ...vip('C'), ...vip('D') }),
       },
       {
         ring: 2,

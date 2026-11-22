@@ -197,6 +197,11 @@ export function seatFov(aspect: number): number {
 /** Above this vertical fov the initial seat view is tilted down (see seatPose). */
 export const SEAT_TILT_FROM_FOV = 60;
 
+/** Downward tilt (radians) of the initial seat look for this screen shape; 0 on landscape screens. */
+export function seatTilt(aspect: number): number {
+  return deg(Math.max(0, seatFov(aspect) - SEAT_TILT_FROM_FOV) / 2);
+}
+
 /**
  * The camera pose when sitting on a seat: eye above the tread, looking towards
  * `focus` (the centre spot). From most seats that direction is close to the
@@ -208,7 +213,7 @@ export const SEAT_TILT_FROM_FOV = 60;
 export function seatPose(seatPosition: Vec3, eyeHeight: number, aspect: number, focus: Vec3 = vec(0, 0, 0)): CameraPose {
   const eye = add(seatPosition, vec(0, eyeHeight, 0));
   const fov = seatFov(aspect);
-  const tilt = deg(Math.max(0, fov - SEAT_TILT_FROM_FOV) / 2);
+  const tilt = seatTilt(aspect);
   if (tilt === 0) return { position: eye, target: focus, fov };
   const base = anglesOf(eye, focus);
   const look = { yaw: base.yaw, pitch: Math.max(SEAT_LOOK_LIMITS.minPitch, base.pitch - tilt) };

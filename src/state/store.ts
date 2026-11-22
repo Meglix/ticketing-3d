@@ -24,7 +24,11 @@ export interface AppState {
   checkoutOpen: boolean;
   /** True once the 3D scene has rendered its first frame (the UI shows a loader until then). */
   sceneReady: boolean;
+  /** Set when 3D cannot run: no WebGL, the GPU context was lost, or the scene crashed. */
+  sceneFailure: SceneFailure | null;
 }
+
+export type SceneFailure = 'no-webgl' | 'context-lost' | 'crash';
 
 const initialState: AppState = {
   view: 'overview',
@@ -34,6 +38,7 @@ const initialState: AppState = {
   seatId: null,
   checkoutOpen: false,
   sceneReady: false,
+  sceneFailure: null,
 };
 
 type Listener = () => void;
@@ -109,6 +114,11 @@ export const actions = {
 
   markSceneReady(): void {
     set({ sceneReady: true });
+  },
+
+  /** The 3D scene cannot continue; the app swaps in a Romanian fallback screen. */
+  failScene(reason: SceneFailure): void {
+    if (state.sceneFailure === null) set({ sceneFailure: reason });
   },
 };
 

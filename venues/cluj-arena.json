@@ -18,6 +18,7 @@
     { "id": "p25", "label": "25 lei", "price": 25, "color": "#4c6fd6" },
     { "id": "p30", "label": "30 lei", "price": 30, "color": "#7b5bd6" },
     { "id": "p40", "label": "40 lei", "price": 40, "color": "#b45bc9" },
+    { "id": "p50", "label": "50 lei", "price": 50, "color": "#d0569c" },
     { "id": "p60", "label": "60 lei", "price": 60, "color": "#e0607e" },
     { "id": "p100", "label": "100 lei", "price": 100, "color": "#f08a3e" },
     { "id": "vip", "label": "VIP · 150 lei", "price": 150, "color": "#d9a520" },
@@ -104,7 +105,7 @@
             {
               "code": "1B",
               "name": "Sector 1B",
-              "tier": "p40",
+              "tier": "p50",
               "category": "standard",
               "estimated": true,
               "span": { "from": -46.5, "to": -31 },
@@ -178,7 +179,7 @@
             {
               "code": "1E",
               "name": "Sector 1E",
-              "tier": "p40",
+              "tier": "p50",
               "category": "standard",
               "estimated": true,
               "span": { "from": 31, "to": 46.5 },

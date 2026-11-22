@@ -64,6 +64,21 @@ export const strings = {
 
   // Config error
   configErrorTitle: 'Configurația locației este invalidă',
+  unknownVenueTitle: 'Locație necunoscută',
+  unknownVenueBody: 'Adresa cere o locație care nu există în această versiune a demo-ului.',
+  sceneFailureTitle: {
+    'no-webgl': 'Vizualizarea 3D nu poate porni',
+    'context-lost': 'Vizualizarea 3D s-a oprit',
+    crash: 'A apărut o eroare în vizualizarea 3D',
+  },
+  sceneFailureBody: {
+    'no-webgl':
+      'Acest browser nu are WebGL activat. Deschide demo-ul într-un browser recent (Chrome, Safari, Edge, Firefox) cu accelerarea grafică pornită.',
+    'context-lost':
+      'Placa grafică a oprit desenarea (de exemplu după o pauză lungă sau lipsă de memorie). Reîncarcă pagina pentru a continua.',
+    crash: 'Ceva nu a mers cum trebuie. Reîncarcă pagina pentru a încerca din nou.',
+  },
+  reload: 'Reîncarcă pagina',
   configErrorBody:
     'Aplicația nu pornește cu date greșite. Corectează fișierul de configurare al locației și reîncarcă pagina.',
 } as const;

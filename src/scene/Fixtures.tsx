@@ -1,3 +1,4 @@
+import { useFrame } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import {
   BoxGeometry,
@@ -10,6 +11,7 @@ import {
   type Texture,
 } from 'three';
 import type { Venue } from '../venue/loadVenue.ts';
+import { overviewFactor } from './meshData.ts';
 import { PALETTE } from './palette.ts';
 
 /**
@@ -66,6 +68,14 @@ export function Fixtures({ venue }: { venue: Venue }) {
     mesh.instanceMatrix.needsUpdate = true;
     mesh.computeBoundingSphere();
   }, [floodlights]);
+
+  // The lamps hang under the roof's leading edge. When the roof fades to a
+  // ghost for the overview, they would float as a stray dotted line over the
+  // track, so they go with the roof.
+  useFrame(({ camera }) => {
+    const mesh = lampRef.current;
+    if (mesh) mesh.visible = overviewFactor(camera.position.y) < 0.5;
+  });
 
   useEffect(
     () => () => {

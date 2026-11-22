@@ -12,7 +12,7 @@ for (const dpr of [1, 2]) {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: dpr });
     const page = await context.newPage();
     const errors = trackErrors(page);
-    await page.goto('/');
+    await page.goto(`/?dpr=${dpr}`); // pinned so the two measurements really differ in pixel ratio
     await waitForOverview(page);
     await page.waitForTimeout(2000); // warm-up (shader compile, label layout)
     // Main-thread CPU time per frame (JS + WebGL command encoding), which is

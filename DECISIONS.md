@@ -194,3 +194,74 @@ Each entry: **decision** — alternatives — why. Newest at the bottom.
     outside a compact bowl, so the apron's hole was bigger than its outline and
     triangulated into garbage (red/green z-fighting). Lesson: the second venue
     tests the renderer's assumptions, not only the generator's.
+
+## Independent review (fresh reviewer agent, no shared context) — fixes
+
+30. **Sky dome follows the camera, radius 4000 m (< far 5000 m).** The sky
+    sphere (r = 7000 m) sat beyond the rig's far plane, so it was never drawn
+    and every view showed a flat grey background. Alternatives: raise `far`
+    (more depth-precision loss in the overview); shrink a static sphere (it
+    could still be clipped when the camera orbits far out). Following the
+    camera is the standard skybox technique, and the shader colours by direction only.
+
+31. **Label placement ranked by commercial value, with nudging.** Order:
+    hovered → VIP → wheelchair platform (a showcase) → price high to low →
+    press last; ties go to the nearest label, then the code. A colliding label
+    is tried one chip height above and below before it is hidden. Desktop
+    labels went from 33 to 50 of 58 (all premium sectors, 2M2 included); phone
+    from 23 to 35. The cheapest lower-ring labels may still hide; their price
+    shows on hover (desktop) and in the seat panel.
+
+32. **Fail visibly when 3D can't run:** an up-front WebGL check, an error
+    boundary around the stage, and `webglcontextlost` handling, all leading to
+    one Romanian fallback screen with "Reîncarcă pagina". Before, a
+    missing WebGL context unmounted the whole React tree (blank white page).
+
+33. **Height-aware layout for phones in landscape**
+    (`orientation: landscape and max-height: 520px`): a compact 340 px seat
+    card on the right, and a two-column checkout that fits 390 px without
+    scrolling. Width alone had selected the desktop card (≈ 74 % of the height).
+
+34. **Floodlights hide with the ghosted roof**, otherwise they drew a stray
+    dotted line over the track in the overview.
+
+35. **Rotating the phone re-applies the portrait tilt** (mid-flight or seated),
+    keeping the user's yaw and relative pitch.
+
+36. **Browser history for the seat view:** entering a seat pushes one entry.
+    Back (including Android's back gesture) returns to the overview, and leaving
+    through the UI consumes the entry. Alternative: no history (the back
+    gesture would leave the demo in front of a client).
+
+37. **Validator gaps closed:** roof segments longer than one lap or
+    overlapping; floodlight count ≤ 5000; eye height 0.8–2 m; rows placed on
+    the field of play (behind the track/pitch edge, checked only once the field
+    itself fits); shape-error paths carry the sector code. Still by design:
+    semantic checks run only after the shape is valid, because they need a
+    typed config.
+
+38. **Lower ring of Tribuna I now spans 25–50 lei, as in the brief:** 1B/1E
+    moved from 40 to a new 50-lei tier. VIP (1C/1D, 150 lei) stays its own
+    category.
+
+39. **drei is now used: `PerformanceMonitor` drives an adaptive pixel ratio**
+    (steps of 0.5 between 1 and min(2, devicePixelRatio), settling at 1 after
+    3 flip-flops). `?dpr=<n>` pins it (used by e2e screenshots and the perf
+    spec). Alternative: remove drei (the brief names it). Why: the
+    measurements show fill rate is the cost that grows with DPR, so this is the
+    lever that protects frame rate on mid-range phones.
+
+40. **e2e waits for `cameraIdle()`, not just the store.** The 2.2 s intro
+    sweep isn't a store transit. A tap point projected during it went stale and
+    made the new back-gesture test flaky (1 in 3). That was a test
+    synchronisation bug, not an app bug.
+
+41. **Not changed, documented instead:** the horseshoe extension point is
+    narrower than first written: the closed rounded-rectangle assumption is
+    used in 7 modules (see ARCHITECTURE §9). An interface now would be
+    speculative, so it waits for the second template. Eye height is
+    1.2 m above the *tread* (the standard seated sightline convention, ≈ 0.73 m
+    above the seat pan): confirm with the owner. R3F 9.8 logs a
+    `THREE.Clock` deprecation *warning* with three 0.187, which we can't fix
+    without an upstream release. The seat view draws all seats at full detail
+    (~645k triangles), which is fine for laptops, and the adaptive DPR covers phones.

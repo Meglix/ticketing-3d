@@ -12,6 +12,8 @@ export interface DemoState {
 /** The test seam installed by src/interaction (typed locally so e2e does not depend on app globals). */
 export interface DemoSeam {
   state(): DemoState;
+  /** False during the load-time intro sweep and during flights. */
+  cameraIdle(): boolean;
   sectorScreenPoint(code: string): { x: number; y: number } | null;
 }
 export const seam = (): DemoSeam => (window as unknown as { __clujDemo: DemoSeam }).__clujDemo;
@@ -30,21 +32,26 @@ export async function demoState(page: Page): Promise<DemoState> {
   return page.evaluate(() => (window as unknown as { __clujDemo: DemoSeam }).__clujDemo.state());
 }
 
-/** Waits until the scene has rendered and the camera is idle in the overview. */
+/**
+ * Waits until the scene has rendered and the camera is idle in the overview.
+ * `cameraIdle()` matters: the load-time intro sweep moves the camera without
+ * being a store "transit", and a tap point projected during it goes stale.
+ */
 export async function waitForOverview(page: Page): Promise<void> {
   await page.waitForFunction(() => {
     const d = (window as unknown as { __clujDemo?: DemoSeam }).__clujDemo;
     if (!d) return false;
     const s = d.state();
-    return s.sceneReady && s.view === 'overview' && !s.inTransit;
+    return s.sceneReady && s.view === 'overview' && !s.inTransit && d.cameraIdle();
   }, null, { timeout: 120_000 });
 }
 
 export async function waitForSeat(page: Page, code: string): Promise<void> {
   await page.waitForFunction(
     (c) => {
-      const s = (window as unknown as { __clujDemo?: DemoSeam }).__clujDemo?.state();
-      return !!s && s.view === 'seat' && !s.inTransit && s.selectedSector === c;
+      const d = (window as unknown as { __clujDemo?: DemoSeam }).__clujDemo;
+      const s = d?.state();
+      return !!s && s.view === 'seat' && !s.inTransit && s.selectedSector === c && d!.cameraIdle();
     },
     code,
     { timeout: 120_000 },

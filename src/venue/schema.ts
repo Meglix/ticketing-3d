@@ -99,7 +99,7 @@ export const VenueConfigSchema = z.strictObject({
     accessible: z.number().int().min(0),
   }),
   /** Eye height above the tread for a seated spectator (m). */
-  eyeHeight: positive,
+  eyeHeight: finite.refine((v) => v >= 0.8 && v <= 2, 'must be between 0.8 and 2 m (seated eye height)'),
   /** Default centre-to-centre seat pitch (m). */
   seatWidth: positive,
   /** Width of the radial aisle between neighbouring sectors (m). */
@@ -146,7 +146,7 @@ export const VenueConfigSchema = z.strictObject({
       height: positive,
     })
     .nullable(),
-  floodlights: z.strictObject({ count: z.number().int().min(0) }),
+  floodlights: z.strictObject({ count: z.number().int().min(0).max(5000) }),
   screens: z.array(
     z.strictObject({
       x: finite,

@@ -28,7 +28,7 @@ for (const vp of VIEWPORTS) {
 
     test('overview → tap a sector in each stand → seat view → back; fake checkout; no console errors', async ({ page }) => {
       const errors = trackErrors(page);
-      await page.goto('/');
+      await page.goto('/?dpr=2'); // pinned: crisp screenshots (adaptive DPR would drop in software GL)
       await waitForOverview(page);
       await expect(page.getByText('Cluj Arena').first()).toBeVisible();
       await expect(page.getByText('Demo – geometrie aproximativă')).toBeVisible();

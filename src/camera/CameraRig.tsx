@@ -23,6 +23,7 @@ import {
   scale,
   seatFov,
   seatPose,
+  seatTilt,
   sub,
   add,
   vec,
@@ -73,6 +74,10 @@ interface RigState {
   lookBase: LookAngles;
   look: LookAngles;
   lookDistance: number;
+  /** Portrait down-tilt (rad) already included in `look`; re-applied if the screen rotates. */
+  lookTilt: number;
+  /** Tilt baked into the current flight's seat goal. */
+  goalTilt: number;
   /** Point the camera currently looks at. */
   target: Vec3;
   dragging: boolean;
@@ -122,6 +127,8 @@ export function CameraRig({ venue }: { venue: Venue }) {
       lookBase: { yaw: 0, pitch: 0 },
       look: { yaw: 0, pitch: 0 },
       lookDistance: 1,
+      lookTilt: 0,
+      goalTilt: 0,
       target: ORIGIN,
       dragging: false,
     };
@@ -293,6 +300,7 @@ export function CameraRig({ venue }: { venue: Venue }) {
           return;
         }
         goal = seatPose(seat.position, venue.config.eyeHeight, aspect, ORIGIN);
+        r.goalTilt = seatTilt(aspect);
         r.flightGoal = 'seat';
       }
       const from: CameraPose = { position: toVec(cam.position), target: r.target, fov: cam.fov };
@@ -322,6 +330,7 @@ export function CameraRig({ venue }: { venue: Venue }) {
             r.lookBase = anglesOf(pose.position, ORIGIN);
             r.look = clampLook(r.lookBase, anglesOf(pose.position, pose.target));
             r.lookDistance = length(sub(pose.target, pose.position));
+            r.lookTilt = r.goalTilt;
           } else {
             r.mode = 'overview';
           }
@@ -341,6 +350,13 @@ export function CameraRig({ venue }: { venue: Venue }) {
         break;
       }
       case 'seat': {
+        // Phone rotated (during the flight or while seated): swap the portrait
+        // down-tilt for the one this screen shape wants, keeping the user's look.
+        const tilt = seatTilt(aspect);
+        if (Math.abs(tilt - r.lookTilt) > 1e-6) {
+          r.look = clampLook(r.lookBase, { yaw: r.look.yaw, pitch: r.look.pitch - (tilt - r.lookTilt) });
+          r.lookTilt = tilt;
+        }
         const eye = toVec(cam.position);
         const wanted = add(eye, scale(directionOf(r.look), r.lookDistance));
         const k = 1 - Math.exp(-delta * 18);

@@ -14,13 +14,18 @@ import type { Venue } from '../venue/loadVenue.ts';
  *
  * Rules:
  *  - visible only in the overview (hidden while flying and in the seat view);
- *  - hovered / selected first, then nearest to the camera; a label that
- *    would overlap an already placed one is hidden;
+ *  - placement order = commercial value: hovered first, then VIP, the
+ *    wheelchair platform (a showcase), then price from high to low, press
+ *    last; ties go to the label nearest the camera, then by code (stable);
+ *  - a label that would overlap one already placed is first nudged one chip
+ *    height up or down; only if all three positions collide is it hidden;
  *  - narrow screens get a compact text ("de la 40 lei") and smaller chips.
  */
 
 export interface LabelModel {
   code: string;
+  /** Placement priority: higher is placed first (see the rules above). */
+  rank: number;
   full: string;
   compact: string;
   color: string;
@@ -43,8 +48,11 @@ export function buildLabelModels(venue: Venue): LabelModel[] {
       full = `${s.code} · de la ${price} lei`;
       compact = `de la ${price} lei`;
     }
+    const rank =
+      s.category === 'vip' ? 1000 : s.category === 'accessible' ? 500 : price === null ? -1 : price;
     return {
       code: s.code,
+      rank,
       full,
       compact,
       color: tier?.color ?? '#ffffff',
@@ -62,6 +70,9 @@ export interface LabelRegistry {
 export function createLabelRegistry(count: number): LabelRegistry {
   return { layer: null, els: new Array<HTMLDivElement | null>(count).fill(null) };
 }
+
+/** Vertical positions tried for each label, in chip heights: on the anchor, above, below. */
+const NUDGES = [0, -1, 1] as const;
 
 /** Width below which labels switch to the compact form. */
 const COMPACT_BELOW = 640;
@@ -98,6 +109,8 @@ interface Slot {
   i: number;
   x: number;
   y: number;
+  /** Vertical nudge chosen by the placement pass (px). */
+  dy: number;
   dist: number;
   priority: number;
 }
@@ -112,7 +125,7 @@ export function LabelTracker({ models, registry }: { models: LabelModel[]; regis
     layerVisible: null as boolean | null,
     emphasis: '' as string,
   });
-  const slots = useMemo<Slot[]>(() => models.map((_, i) => ({ i, x: 0, y: 0, dist: 0, priority: 0 })), [models]);
+  const slots = useMemo<Slot[]>(() => models.map((_, i) => ({ i, x: 0, y: 0, dy: 0, dist: 0, priority: 0 })), [models]);
   const placed = useMemo<{ x0: number; y0: number; x1: number; y1: number }[]>(() => [], []);
 
   useFrame(({ camera, size }) => {
@@ -160,33 +173,38 @@ export function LabelTracker({ models, registry }: { models: LabelModel[]; regis
       slot.x = x;
       slot.y = y;
       slot.dist = dist;
-      slot.priority = m.code === app.hoveredSector ? 0 : 1;
+      slot.priority = m.code === app.hoveredSector ? Number.POSITIVE_INFINITY : m.rank;
       visibleSlots.push(slot);
     }
-    visibleSlots.sort((a, b) => a.priority - b.priority || a.dist - b.dist);
+    visibleSlots.sort(
+      (a, b) =>
+        b.priority - a.priority || a.dist - b.dist || (models[a.i]!.code < models[b.i]!.code ? -1 : 1),
+    );
 
-    // Greedy placement: keep a label only if its box doesn't overlap a kept one.
+    // Greedy placement: try the anchor, then one chip height above / below;
+    // keep the first position whose box doesn't overlap a kept one.
     placed.length = 0;
     const keep = new Set<number>();
-    const pad = compact ? 2 : 3;
+    const pad = compact ? 1 : 2;
     for (const slot of visibleSlots) {
       const sz = st.sizes[slot.i] ?? { w: 80, h: 20 };
-      const box = {
-        x0: slot.x - sz.w / 2 - pad,
-        x1: slot.x + sz.w / 2 + pad,
-        y0: slot.y - sz.h - pad,
-        y1: slot.y + pad,
-      };
-      let free = true;
-      for (const p of placed) {
-        if (box.x0 < p.x1 && box.x1 > p.x0 && box.y0 < p.y1 && box.y1 > p.y0) {
-          free = false;
-          break;
+      const step = sz.h + 2 * pad;
+      for (const dy of NUDGES) {
+        const y = slot.y + dy * step;
+        const box = { x0: slot.x - sz.w / 2 - pad, x1: slot.x + sz.w / 2 + pad, y0: y - sz.h - pad, y1: y + pad };
+        let free = true;
+        for (const p of placed) {
+          if (box.x0 < p.x1 && box.x1 > p.x0 && box.y0 < p.y1 && box.y1 > p.y0) {
+            free = false;
+            break;
+          }
         }
+        if (!free) continue;
+        placed.push(box);
+        keep.add(slot.i);
+        slot.dy = dy * step;
+        break;
       }
-      if (!free) continue;
-      placed.push(box);
-      keep.add(slot.i);
     }
 
     // Write to the DOM only what changed.
@@ -200,10 +218,11 @@ export function LabelTracker({ models, registry }: { models: LabelModel[]; regis
       }
       if (!show) continue;
       const slot = slots[i]!;
+      const y = slot.y + slot.dy;
       const prev = st.pos[i];
-      if (!prev || Math.abs(prev.x - slot.x) > 0.25 || Math.abs(prev.y - slot.y) > 0.25) {
-        st.pos[i] = { x: slot.x, y: slot.y };
-        el.style.transform = `translate3d(${slot.x.toFixed(1)}px, ${slot.y.toFixed(1)}px, 0) translate(-50%, -100%)`;
+      if (!prev || Math.abs(prev.x - slot.x) > 0.25 || Math.abs(prev.y - y) > 0.25) {
+        st.pos[i] = { x: slot.x, y };
+        el.style.transform = `translate3d(${slot.x.toFixed(1)}px, ${y.toFixed(1)}px, 0) translate(-50%, -100%)`;
       }
     }
   });

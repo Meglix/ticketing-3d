@@ -51,3 +51,25 @@ test('back to overview mid-flight, Escape, and edge (corner) sectors', async ({ 
   await expect(page.getByRole('button', { name: 'Cumpără' })).toBeDisabled();
   expect(errors).toEqual([]);
 });
+
+test('the browser / phone back gesture returns from a seat to the overview instead of leaving', async ({ page }) => {
+  const errors = trackErrors(page);
+  await page.goto('/');
+  await waitForOverview(page);
+  const start = page.url();
+  await tapSector(page, '2M2', false);
+  await waitForSeat(page, '2M2');
+  await page.goBack();
+  await waitForOverview(page);
+  expect(page.url()).toBe(start);
+  // Leaving through the UI consumes the history entry: the next back leaves the app.
+  await tapSector(page, '2C', false);
+  await waitForSeat(page, '2C');
+  await page.getByRole('button', { name: 'Înapoi la stadion' }).click();
+  await waitForOverview(page);
+  // The seat entry was popped, so we're back on a plain (non-seat) history entry.
+  await expect
+    .poll(() => page.evaluate(() => (history.state as Record<string, unknown> | null)?.['cluj-demo-seat'] ?? null))
+    .toBeNull();
+  expect(errors).toEqual([]);
+});

@@ -30,7 +30,7 @@ describe('venue config validation', () => {
   it('rejects wrong types with the JSON path', () => {
     const c = clone() as unknown as { stands: { rings: { sectors: { rows: { seats: unknown }[] }[] }[] }[] };
     c.stands[0]!.rings[0]!.sectors[0]!.rows[2]!.seats = '27';
-    expectInvalid(c, /stands\[0\]\.rings\[0\]\.sectors\[0\]\.rows\[2\]\.seats/);
+    expectInvalid(c, /stands\[0\]\.rings\[0\]\.sectors\[0\] \(1A1\)\.rows\[2\]\.seats/);
   });
 
   it('rejects unknown keys (typos are not silently ignored)', () => {
@@ -124,5 +124,36 @@ describe('venue config validation', () => {
     } catch (e) {
       expect((e as VenueConfigError).issues.length).toBeGreaterThanOrEqual(2);
     }
+  });
+
+  it('names the sector in shape-error paths', () => {
+    const c = clone() as unknown as { stands: { rings: { sectors: { rows: { seats: unknown }[] }[] }[] }[] };
+    c.stands[0]!.rings[1]!.sectors[2]!.rows[0]!.seats = 'many';
+    expectInvalid(c, /sectors\[2\] \(2B\)\.rows\[0\]\.seats/);
+  });
+
+  it('rejects rows placed on the field of play', () => {
+    const c = clone();
+    const pd = c.stands.flatMap((s) => s.rings).flatMap((r) => r.sectors).find((s) => s.code === 'PD')!;
+    pd.rows[0]!.distance = -15;
+    expectInvalid(c, /sector PD .* row 1: distance -15 m puts it on the field of play/);
+  });
+
+  it('rejects roof segments that overlap or exceed one lap', () => {
+    const c = clone();
+    c.roof!.segments.push({ ...c.roof!.segments[0]! });
+    expectInvalid(c, /roof\.segments\[0\] overlaps roof\.segments\[4\]/);
+    const d = clone();
+    d.roof!.segments = [{ from: 0, to: 900 }];
+    expectInvalid(d, /roof\.segments\[0\]: longer than the whole reference line/);
+  });
+
+  it('bounds the eye height and the floodlight count', () => {
+    const c = clone();
+    c.eyeHeight = 50;
+    expectInvalid(c, /eyeHeight: must be between 0\.8 and 2 m/);
+    const d = clone();
+    d.floodlights.count = 5_000_000;
+    expectInvalid(d, /floodlights\.count/);
   });
 });

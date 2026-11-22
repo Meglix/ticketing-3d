@@ -1,40 +1,40 @@
 {
   "overview_dpr1": {
-    "fps": 5.396438350688344,
-    "frames": 27,
-    "worstMs": 250,
-    "p95Ms": 250,
+    "fps": 3.6860280138129387,
+    "frames": 19,
+    "worstMs": 433.3000000000002,
+    "p95Ms": 433.3000000000002,
     "cpu": {
-      "mainThreadMsPerFrame": 202.33,
-      "scriptMsPerFrame": 1.45
+      "mainThreadMsPerFrame": 310.79,
+      "scriptMsPerFrame": 1.7
     },
     "renderer": {
-      "calls": 90,
-      "triangles": 162930,
+      "calls": 89,
+      "triangles": 158298,
       "geometries": 80,
       "textures": 3,
       "pixelRatio": 1
     },
     "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
-    "measuredAt": "2026-11-22T14:58:38.566Z"
+    "measuredAt": "2026-11-22T18:05:39.354Z"
   },
   "overview_dpr2": {
-    "fps": 1.983418620334008,
-    "frames": 10,
-    "worstMs": 733.1999999999998,
-    "p95Ms": 733.1999999999998,
+    "fps": 1.6547767889976153,
+    "frames": 9,
+    "worstMs": 766.6000000000004,
+    "p95Ms": 766.6000000000004,
     "cpu": {
-      "mainThreadMsPerFrame": 648.17,
-      "scriptMsPerFrame": 2.41
+      "mainThreadMsPerFrame": 738.71,
+      "scriptMsPerFrame": 2.43
     },
     "renderer": {
-      "calls": 90,
-      "triangles": 162930,
+      "calls": 89,
+      "triangles": 158298,
       "geometries": 80,
       "textures": 3,
       "pixelRatio": 2
     },
     "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
-    "measuredAt": "2026-11-22T14:58:50.265Z"
+    "measuredAt": "2026-11-22T18:05:51.632Z"
   }
 }
