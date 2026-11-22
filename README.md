@@ -95,6 +95,18 @@ decision, and [REPORT.md](REPORT.md) for results and the on-site checklist.
 
 ## Deploy to Vercel
 
+**Current deployment:** https://ticketing-3d-orpin.vercel.app (Vercel project
+`ticketing-3d`, team *meglix's projects*). The project is linked to this GitHub
+repository, so **every push to `claude/relaxed-galileo-5jqhby` (the production
+branch) redeploys automatically**. Pushes to other branches create preview
+deployments.
+
+**Access is private:** the team's Vercel Authentication covers all
+deployments except custom domains, so the link opens only for someone logged
+into your Vercel account. To show it to someone else, create a *Shareable
+Link* (project → Settings → Deployment Protection), or switch protection to
+"Standard" or add a custom domain to make it public.
+
 Static site, no backend. Vercel detects Vite automatically.
 
 - Dashboard: *Add New → Project*, import the repository, framework preset
