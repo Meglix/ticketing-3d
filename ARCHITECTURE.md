@@ -168,15 +168,99 @@ It is ~100 lines on React's `useSyncExternalStore`, with no library:
 
 ## 5. Rendering (src/scene)
 
-_Filled in after integration — see below._
+The scene only turns arrays into GPU buffers, plus a few procedural extras
+(pitch markings, track, sky, hills). The rules that keep it fast:
+
+- **One draw call for 30,335 seats.** `Seats.tsx` uses a single
+  `InstancedMesh`: one seat geometry drawn 30,335 times, each instance with its
+  own transform matrix (from `position` + `facing`) and colour (price tier).
+  Colours are rewritten only when hover/selection changes, and only for the
+  sector ranges that changed. That's why the generator keeps each sector's seats
+  contiguous (`seatStart … seatEnd`).
+- **Level of detail.** From the overview a seat is 2–7 px wide, so a second
+  instanced mesh with a 4-triangle seat (instead of 20) is drawn when the camera
+  is far. Both meshes **share** the same matrix and colour buffers, so switching
+  costs nothing and colours never desync. Result: ~650k → ~165k triangles in
+  the overview, ~90 draw calls in total.
+- **Stands** are the generator's per-sector solids (`structure.sectorSurfaces`),
+  one mesh each, so a sector can be tinted and tapped on its own.
+- **The roof fades with camera height** (`overviewFactor`): a ghost in the
+  overview, so you can see the sectors under a roof that covers ~93 % of seats,
+  and solid in the seat view. Trusses, fins and columns stop drawing when faded.
+  Nothing on the roof has pointer handlers, so it never steals a tap.
+- **Labels** ("2M2 · de la 40 lei") are DOM chips positioned from inside the
+  render loop through refs (no React re-render per frame). A greedy pass shows
+  hovered/selected and nearest labels first and hides any label that would
+  overlap one already placed, so a phone never shows an unreadable carpet.
+- **No shadows and no postprocessing.** A hemisphere + sun light and ACES tone
+  mapping give the clean, slightly stylised look. Real-time shadows of 30k
+  instances would cost more than everything else together.
+
+Measured cost: about 1.5–2 ms of JavaScript per frame. The rest is pure GPU
+work (see REPORT.md for the numbers and why the headless figures are a floor).
 
 ## 6. Camera and interaction (src/camera, src/interaction)
 
-_Filled in after integration — see below._
+**Pure math first** (`cameraMath.ts`, `flight.ts`, all unit-tested):
+
+- *Overview framing* computes the exact distance at which the venue's real
+  outline fits the screen for the current aspect ratio. A laptop looks from
+  behind Tribuna II at the main stand (so VIP and press are visible); a portrait
+  phone looks from behind a peluza, so the stadium's long axis runs down the
+  screen and fills it.
+- *Seat pose*: eye = seat + 1.2 m, looking at the centre spot. On tall phone
+  screens the look is tilted down a little so the top half isn't sky.
+  Look-around is clamped to ±75° yaw around the direction to the centre and
+  −50°…+20° pitch.
+- *Flights that never go through the roof.* A seat sits "inside" the
+  structure, and the only clean way in is over the pitch. Each seat gets a
+  **portal**: a point above the pitch in front of it, just above roof height,
+  far enough out that the straight line portal → eye passes *under* every
+  overhang edge (roof leading edge, upper-ring fascia). These edges are derived
+  from the config. A flight = line → smooth Hermite curve between portals →
+  line. Tests fly all 58 sectors from both overviews, every pair of seats
+  (3,306 flights) and mid-air retargets, and check every sample against the
+  structure. A deliberately naive straight-line flight is caught (control test).
+
+**The rig** (`CameraRig.tsx`) is a small state machine inside `useFrame`:
+`intro → overview ⇄ flying ⇄ seat`. It reads `appStore.get()` each frame (no
+React re-render). When the store's destination changes, it plans a new
+1.5 s ease-in-out flight **from wherever the camera is right now**, using the
+current position, look target and fov. That one rule makes rapid repeated
+taps safe: no queue, no snapping, the last tap wins. `actions.arrive()` is
+called when a flight ends.
+
+**Taps vs. drags** (`sectorHandlers.ts`): R3F reports how far the pointer
+moved between down and up (`e.delta`). Under 6 px is a tap, which selects;
+more is the end of an orbit or look-around drag, which is ignored. Hover reacts
+only to a mouse, so a finger never leaves a sticky highlight.
+
+**Test seam** (`TestSeam.tsx`): `window.__clujDemo.sectorScreenPoint(code)`
+projects a point on that sector's treads to screen pixels with the live camera
+(checked to be unobstructed and inside the sector). Playwright then does a
+*real* tap there. It is a read-only window into the app, not a shortcut around
+the UI.
 
 ## 7. UI overlay (src/ui)
 
-_Filled in after integration — see below._
+Plain React + CSS, every string in `strings.ts` (Romanian). The overlay root is
+`pointer-events: none`, so drags and taps fall through to the canvas; only
+panels and buttons take events. Each component subscribes to just the store
+slice it shows.
+
+- Header with the venue name and the permanent **"Demo – geometrie aproximativă"** badge.
+- **Prețuri demo** legend from the config's tiers: a bottom price bar on
+  laptops, a collapsible bar on phones.
+- Context hints ("Atinge/Apasă pe un sector…", "Te ducem la locul tău…") and
+  a desktop hover card.
+- **Seat panel**: stand, ring, sector, row, seat, price. "Cumpără" is
+  disabled for the press sector, and "Înapoi la stadion" returns to the
+  overview. It is a bottom sheet on phones and a card on laptops.
+- **Fake checkout**: a prominent **"Demo – fără plată reală"** banner,
+  1–4 adjacent seats and a total, with no payment or personal-data fields.
+  It is an accessible dialog: focus is trapped, Escape and backdrop close it,
+  and focus returns to the button.
+- A loader until the first frame, and a full-screen validation error page for a bad config.
 
 ## 8. Testing strategy
 
@@ -185,6 +269,7 @@ _Filled in after integration — see below._
 | Reference curve math | exact identities vs. brute-force numeric integration; continuity at segment joins; level-set property |
 | Venue data | real JSON: seat count = 30,335 (+ VIP/press/wheelchair split), unique ids, min spacing ≥ seat width (spatial hash over all seats), each seat on its row and facing the field, C-values for every seat |
 | Validation | 15 deliberately broken configs, each must fail with a specific message |
+| UI helpers | price formatting, seat summaries, config-error rendering |
 | Meshes | finite, in range, winding agrees with normals, roof above every spectator |
-| Camera math | pure functions (easing, poses, clamps, retargeting) |
+| Camera math | pure functions: framing fits the outline on laptop + phone, clamps, portrait tilt, and roof-safe flights for every sector, every seat pair and mid-air retargets (with a control test) |
 | Whole app | Playwright on the production build: real taps per stand at 1440×900 and 390×844, screenshots, zero console errors, FPS |
