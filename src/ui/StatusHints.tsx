@@ -5,7 +5,7 @@ import { useMediaQuery } from './useMediaQuery.ts';
 
 /** "Tap a sector…" in the overview; the wording follows the input device. */
 export function OverviewHint() {
-  const show = useAppState((s) => s.view === 'overview' && !s.inTransit && s.sceneReady);
+  const show = useAppState((s) => s.view === 'overview' && !s.inTransit && s.sceneReady && !s.introPlaying);
   const canHover = useMediaQuery('(hover: hover) and (pointer: fine)');
   if (!show) return null;
   return (
@@ -16,14 +16,14 @@ export function OverviewHint() {
   );
 }
 
-/** Small status while the camera flies to a seat. */
+/** Small status while the camera flies to a sector or into a seat. */
 export function TransitStatus() {
-  const show = useAppState((s) => s.view === 'seat' && s.inTransit);
-  if (!show) return null;
+  const target = useAppState((s) => (s.inTransit && s.view !== 'overview' ? s.view : null));
+  if (!target) return null;
   return (
     <p className="ui-transit ui-pill" role="status" aria-live="polite">
       <span className="ui-spinner" aria-hidden />
-      <span>{strings.inTransit}</span>
+      <span>{target === 'seat' ? strings.inTransit : strings.inTransitSector}</span>
     </p>
   );
 }

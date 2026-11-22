@@ -21,7 +21,7 @@
     { "id": "p50", "label": "50 lei", "price": 50, "color": "#d0569c" },
     { "id": "p60", "label": "60 lei", "price": 60, "color": "#e0607e" },
     { "id": "p100", "label": "100 lei", "price": 100, "color": "#f08a3e" },
-    { "id": "vip", "label": "VIP · 150 lei", "price": 150, "color": "#d9a520" },
+    { "id": "vip", "label": "VIP · 150 lei", "price": 150, "color": "#dfe3ea" },
     { "id": "press", "label": "Presă", "price": null, "color": "#8d96a3" }
   ],
   "pitch": {

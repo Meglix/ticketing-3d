@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { availabilityFor, SOLD } from '../demo/availability.ts';
 import { useAppState } from '../state/store.ts';
 import type { Venue } from '../venue/loadVenue.ts';
-import { formatLei, sectorSummary } from './format.ts';
+import { formatLei, seatSummary, sectorSummary } from './format.ts';
 import { WheelchairIcon } from './icons.tsx';
 import { strings } from './strings.ts';
 import { useMediaQuery } from './useMediaQuery.ts';
@@ -10,12 +11,14 @@ const OFFSET = 18;
 const MARGIN = 8;
 
 /**
- * Desktop-only tooltip for the sector under the mouse. It follows the pointer
- * by writing a transform directly (no React re-render per mouse move).
+ * Desktop-only tooltip: the sector under the mouse in the overview, the seat
+ * under the mouse in the sector focus. It follows the pointer by writing a
+ * transform directly (no React re-render per mouse move).
  */
 export function HoverCard({ venue }: { venue: Venue }) {
   const canHover = useMediaQuery('(hover: hover) and (pointer: fine)');
   const code = useAppState((s) => (s.view === 'overview' && !s.inTransit ? s.hoveredSector : null));
+  const seatId = useAppState((s) => (s.view === 'sector' && !s.inTransit ? s.hoveredSeat : null));
   const ref = useRef<HTMLDivElement>(null);
   const pointer = useRef({ x: -9999, y: -9999 });
 
@@ -42,10 +45,30 @@ export function HoverCard({ venue }: { venue: Venue }) {
     return () => window.removeEventListener('pointermove', onMove);
   }, [canHover]);
 
-  useLayoutEffect(place, [code]);
+  useLayoutEffect(place, [code, seatId]);
 
   const summary = useMemo(() => (code ? sectorSummary(venue, code) : null), [venue, code]);
-  if (!canHover || !summary) return null;
+  const seat = useMemo(() => (seatId ? seatSummary(venue, seatId) : null), [venue, seatId]);
+  if (!canHover) return null;
+  if (seat) {
+    const index = venue.manifest.seats.indexOf(venue.seatById.get(seat.seatId)!);
+    const sold = availabilityFor(venue.manifest)[index] === SOLD;
+    return (
+      <div ref={ref} className="ui-hovercard ui-panel" role="tooltip">
+        <div className="ui-hovercard__head">
+          <span className="ui-swatch" style={{ background: seat.tierColor }} aria-hidden />
+          <strong>
+            {strings.fieldRow} {seat.row} · {strings.fieldSeat} {seat.seat}
+          </strong>
+        </div>
+        <p className="ui-hovercard__price">
+          {seat.price === null ? strings.pressNotForSale : formatLei(seat.price)}
+          <span className="ui-hovercard__state"> · {sold ? strings.seatSold : strings.seatFree}</span>
+        </p>
+      </div>
+    );
+  }
+  if (!summary) return null;
 
   return (
     <div ref={ref} className="ui-hovercard ui-panel" role="tooltip">

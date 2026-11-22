@@ -1219,3 +1219,297 @@ button {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ============================================================================
+   V2 — cinematic night: darker glass, slimmer bars, gold actions.
+   ========================================================================== */
+:root {
+  --ui-bg: rgba(7, 10, 15, 0.64);
+  --ui-bg-solid: rgba(10, 13, 19, 0.97);
+  --ui-border: rgba(255, 255, 255, 0.085);
+  --ui-text: #eef2f8;
+  --ui-muted: #98a3b5;
+  --ui-gold: #f5c542;
+  --ui-gold-ink: #1c1505;
+  --ui-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+}
+
+body {
+  font-family: 'Inter', 'SF Pro Text', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* While the intro plays, only the title card (and the loader) are shown. */
+.ui-overlay > * {
+  transition: opacity 0.8s ease;
+}
+.ui-overlay.is-intro > :not(.ui-intro):not(.ui-loader) {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ---- intro title card ------------------------------------------------------ */
+.ui-intro {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  text-align: center;
+  transition: opacity 1.1s ease;
+}
+.ui-intro.is-done {
+  opacity: 0;
+}
+.ui-intro__title {
+  animation: ui-intro-in 2.4s ease both;
+}
+.ui-intro__name {
+  margin: 0;
+  font-size: clamp(30px, 6vw, 64px);
+  font-weight: 300;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  padding-left: 0.32em; /* optical centring of the letter-spacing */
+  color: #f4f7ff;
+  text-shadow: 0 0 30px rgba(140, 180, 255, 0.35);
+}
+.ui-intro__sub {
+  margin: 10px 0 0;
+  font-size: clamp(12px, 1.6vw, 15px);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(214, 224, 240, 0.7);
+}
+.ui-intro__skip {
+  position: absolute;
+  bottom: calc(28px + var(--safe-bottom));
+  margin: 0;
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(214, 224, 240, 0.5);
+  animation: ui-intro-in 1.6s 1.2s ease both;
+}
+@keyframes ui-intro-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+    filter: blur(6px);
+  }
+}
+
+/* ---- header: quieter ------------------------------------------------------- */
+.ui-brand {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  padding-left: 2px;
+}
+.ui-brand__mark {
+  display: none;
+}
+.ui-brand__name {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+}
+.ui-brand__sub {
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+}
+.ui-demo-badge {
+  padding: 2px 8px;
+  font-size: 10.5px;
+  font-weight: 500;
+  color: rgba(255, 226, 163, 0.72);
+  background: rgba(30, 22, 6, 0.4);
+  border-color: rgba(245, 185, 66, 0.22);
+}
+@media (min-width: 768px) {
+  .ui-brand__name {
+    font-size: 16px;
+  }
+}
+
+/* ---- buttons: gold primary --------------------------------------------------- */
+.ui-btn--gold,
+.ui-btn--primary {
+  background: linear-gradient(180deg, #f9d97a, #e9b83a);
+  color: var(--ui-gold-ink);
+  font-weight: 700;
+  box-shadow: 0 6px 22px rgba(245, 197, 66, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+.ui-btn--gold:hover:not(:disabled),
+.ui-btn--primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, #fbe08f, #f0c14a);
+}
+.ui-btn--gold:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: #8b96a8;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+.ui-btn--ghost {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* ---- seat / sector bars ------------------------------------------------------ */
+.ui-seatbar,
+.ui-sectorbar {
+  position: absolute;
+  left: calc(10px + var(--safe-left));
+  right: calc(10px + var(--safe-right));
+  bottom: calc(10px + var(--safe-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--ui-border);
+  border-radius: 18px;
+  background: var(--ui-bg);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  box-shadow: var(--ui-shadow);
+  pointer-events: auto;
+  animation: ui-fade-up 0.35s ease both;
+}
+.ui-seatbar__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 0;
+  margin: 0;
+  font-size: 14.5px;
+  color: var(--ui-text);
+}
+.ui-seatbar__line strong {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ui-seatbar__price {
+  color: var(--ui-gold);
+}
+.ui-sep {
+  margin: 0 7px;
+  color: rgba(255, 255, 255, 0.28);
+}
+.ui-seatbar__dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 10px currentColor;
+}
+.ui-seatbar__sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 0;
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--ui-muted);
+}
+.ui-seatbar__drag {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  margin-left: 14px;
+  opacity: 0.8;
+}
+.ui-seatbar__actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+.ui-sectorbar .ui-seatbar__actions {
+  grid-template-columns: 1fr;
+}
+.ui-sectorbar__cta {
+  color: #dfe7f5;
+}
+.ui-states {
+  display: flex;
+  gap: 14px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 11.5px;
+  color: var(--ui-muted);
+}
+.ui-states li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ui-state {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+.ui-state--sold {
+  background: #2a2e36;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+.ui-state--gold {
+  background: var(--ui-gold);
+  box-shadow: 0 0 8px rgba(245, 197, 66, 0.7);
+}
+.ui-hovercard__state {
+  font-weight: 500;
+  color: var(--ui-muted);
+}
+
+@media (min-width: 768px) {
+  .ui-seatbar,
+  .ui-sectorbar {
+    left: 50%;
+    right: auto;
+    bottom: 22px;
+    flex-direction: row;
+    align-items: center;
+    gap: 22px;
+    width: max-content;
+    max-width: calc(100% - 40px);
+    padding: 10px 10px 10px 22px;
+    border-radius: 999px;
+    transform: translateX(-50%);
+    animation-name: ui-fade-in;
+  }
+  .ui-seatbar__actions {
+    display: flex;
+  }
+  .ui-seatbar__drag {
+    display: inline-flex;
+  }
+  .ui-seatbar .ui-btn,
+  .ui-sectorbar .ui-btn {
+    min-height: 42px;
+    border-radius: 999px;
+    padding: 0 18px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  .ui-seatbar,
+  .ui-sectorbar {
+    bottom: calc(6px + var(--safe-bottom));
+    padding: 6px 6px 6px 14px;
+  }
+  .ui-states {
+    display: none;
+  }
+}
+
+@keyframes ui-fade-in {
+  from {
+    opacity: 0;
+  }
+}

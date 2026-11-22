@@ -9,7 +9,8 @@ import { signedDistance } from '../geometry/roundedRect.ts';
 import { standSection } from '../geometry/structure.ts';
 import type { Vec3 } from '../geometry/types.ts';
 import { loadVenue } from '../venue/loadVenue.ts';
-import { boxCorners, defaultOverviewOrbit, length, overviewPose, seatPose, sub, type CameraPose } from './cameraMath.ts';
+import { boxCorners, defaultOverviewOrbit, length, overviewPose, seatPose, seatViewPose, sub, type CameraPose } from './cameraMath.ts';
+import { sectorFocusPose } from './focus.ts';
 import { flightEnvelope, needsPortal, planFlight, portalFor } from './flight.ts';
 import { framingOutline } from './framing.ts';
 
@@ -203,5 +204,54 @@ describe('flights never pass through the roof or the stands', () => {
       }
     }
     expect(problems.slice(0, 10)).toEqual([]);
+  });
+});
+
+describe('V2 flights: overview → sector focus → seat view (and back)', () => {
+  const lastRow = new Map<string, number>();
+  for (const st of config.stands)
+    for (const ring of st.rings) for (const sec of ring.sectors) lastRow.set(sec.code, sec.rows[sec.rows.length - 1]!.row);
+
+  function firstCollision(from: CameraPose, to: CameraPose): string | null {
+    const flight = planFlight(env, from, to);
+    for (let i = 0; i <= 600; i++) {
+      const hit = collision(flight.sample(i / 600).position);
+      if (hit) return hit;
+    }
+    return null;
+  }
+
+  it('never passes through the roof or the stands, for every sector and its representative seat (laptop and phone)', () => {
+    const problems: string[] = [];
+    for (const aspect of [1440 / 900, 390 / 844]) {
+      const overview = overviewPose(outline, aspect, defaultOverviewOrbit(aspect));
+      for (const sector of manifest.sectors) {
+        const focus = sectorFocusPose(venue, sector.code, aspect);
+        const seat = manifest.seats[sector.representativeSeat]!;
+        const view = seatViewPose(seat, config.eyeHeight, aspect, seat.row === lastRow.get(sector.code));
+        const legs: [string, CameraPose, CameraPose][] = [
+          ['overview→focus', overview, focus],
+          ['focus→seat', focus, view],
+          ['seat→focus', view, focus],
+          ['focus→overview', focus, overview],
+        ];
+        for (const [name, a, b] of legs) {
+          const hit = firstCollision(a, b);
+          if (hit) problems.push(`${sector.code} ${name} (aspect ${aspect.toFixed(2)}): ${hit}`);
+        }
+        // The seat camera itself must not sit inside the structure.
+        const at = collision(view.position);
+        if (at) problems.push(`${sector.code} seat view position: ${at}`);
+      }
+    }
+    expect(problems.slice(0, 10)).toEqual([]);
+  });
+
+  it('frames the sector focus from over the field, outside the roof line', () => {
+    for (const sector of manifest.sectors) {
+      const focus = sectorFocusPose(venue, sector.code, 1.6);
+      expect(signedDistance(config.layout.referenceLine, focus.position), sector.code).toBeLessThan(config.roof!.inner.distance);
+      expect(focus.position.y, sector.code).toBeGreaterThan(focus.target.y);
+    }
   });
 });

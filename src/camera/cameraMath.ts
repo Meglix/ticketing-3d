@@ -244,19 +244,19 @@ export function clampLook(base: LookAngles, look: LookAngles, limits = SEAT_LOOK
 // ---------------------------------------------------------------------------
 
 /** How far behind the seat centre the V2 seat camera sits (m); 0.3 in a last row (back wall). */
-export const SEAT_VIEW_BACK = 0.62;
+export const SEAT_VIEW_BACK = 0.85;
 export const SEAT_VIEW_BACK_LAST_ROW = 0.3;
 /** Extra height over the seated eye point (m): the camera looks over your own seat back. */
-export const SEAT_VIEW_LIFT = 0.25;
+export const SEAT_VIEW_LIFT = 0.3;
 /** Extra downward tilt of the initial look, so armrests and the rows in front are in frame. */
-export const SEAT_VIEW_DOWN = deg(9);
+export const SEAT_VIEW_DOWN = deg(11);
 
 /**
  * The V2 seat-view camera. Like the reference, it sits just behind and above
- * the seated eye point (0.62 m back, 0.25 m up), so the bottom of the frame
- * shows your own seat back and armrests and the backs of the seats in front.
- * Yaw still centres on `focus` (look-around limits are unchanged). The exact
- * eye point (seatPose) is what the sightline maths uses.
+ * the seated eye point (0.85 m back, 0.3 m up), looking straight ahead along
+ * the seat, so the bottom of the frame shows your own seat back and armrests
+ * and the backs of the seats in front. Look-around limits still centre on
+ * `focus`. The exact eye point (seatPose) is what the sightline maths uses.
  */
 export function seatViewPose(
   seat: { position: Vec3; facing: { x: number; z: number } },
@@ -273,8 +273,10 @@ export function seatViewPose(
   );
   const fov = seatFov(aspect);
   const base = anglesOf(eye, focus);
+  // Look straight ahead along the seat (your own seat at the bottom centre),
+  // pitched like the view towards the centre spot, plus a little down.
   const look = {
-    yaw: base.yaw,
+    yaw: Math.atan2(seat.facing.z, seat.facing.x),
     pitch: Math.max(SEAT_LOOK_LIMITS.minPitch, base.pitch - SEAT_VIEW_DOWN - seatTilt(aspect)),
   };
   return { position: eye, target: add(eye, scale(directionOf(look), length(sub(focus, eye)))), fov };

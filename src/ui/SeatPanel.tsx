@@ -2,90 +2,72 @@ import { useMemo } from 'react';
 import { actions, useAppState } from '../state/store.ts';
 import type { Venue } from '../venue/loadVenue.ts';
 import { categoryNote, priceText, seatSummary } from './format.ts';
-import { ArrowLeft, DragIcon, InfoIcon, TicketIcon, WheelchairIcon } from './icons.tsx';
+import { ArrowLeft, DragIcon, TicketIcon, WheelchairIcon } from './icons.tsx';
 import { strings } from './strings.ts';
 
 /**
- * Details of the seat the camera sits on, with "Cumpără" and the way back.
- * Desktop: a card in the bottom-right corner. Phone: a bottom sheet.
+ * Seat view (level 3): a slim glass bar at the bottom —
+ * "Tribuna I · Sector 1C · Rând 8 · Loc 6 · 50 lei", a gold "Cumpără" and the
+ * way back to the sector. Kept small so the view stays the hero.
  */
 export function SeatPanel({ venue }: { venue: Venue }) {
-  const seatId = useAppState((s) => (s.view === 'seat' ? s.seatId : null));
+  const seatId = useAppState((s) => (s.view === 'seat' && !s.inTransit ? s.seatId : null));
   const summary = useMemo(() => (seatId ? seatSummary(venue, seatId) : null), [venue, seatId]);
   if (!summary) return null;
 
-  const note = categoryNote(summary.category);
   const forSale = summary.price !== null;
+  const note = categoryNote(summary.category);
 
   return (
-    <section className="ui-seat ui-panel" aria-label={strings.panelLabel} key={summary.seatId}>
-      <header className="ui-seat__head">
-        <span className="ui-swatch ui-swatch--lg" style={{ background: summary.tierColor }} aria-hidden />
-        <div className="ui-seat__titles">
-          <h2 className="ui-seat__stand">{summary.standName}</h2>
-          <p className="ui-seat__ring">
-            <span className="ui-visually-hidden">{strings.fieldRing}: </span>
-            {summary.ringName}
-          </p>
-        </div>
-        {summary.estimated && (
-          <span className="ui-chip" title={strings.estimatedNote}>
-            <InfoIcon size={12} />
-            {strings.estimatedNote}
+    <section className="ui-seatbar" aria-label={strings.panelLabel} key={summary.seatId}>
+      <div className="ui-seatbar__info">
+        <p className="ui-seatbar__line">
+          <span className="ui-seatbar__dot" style={{ background: summary.tierColor }} aria-hidden />
+          <span>{summary.standName}</span>
+          <span className="ui-sep" aria-hidden>·</span>
+          <span>
+            {strings.fieldSector} <strong>{summary.code}</strong>
           </span>
-        )}
-      </header>
-
-      <dl className="ui-seat__grid">
-        <div>
-          <dt>{strings.fieldSector}</dt>
-          <dd>{summary.code}</dd>
-        </div>
-        <div>
-          <dt>{strings.fieldRow}</dt>
-          <dd>{summary.row}</dd>
-        </div>
-        <div>
-          <dt>{strings.fieldSeat}</dt>
-          <dd>{summary.seat}</dd>
-        </div>
-      </dl>
-
-      {note && (
-        <p className={`ui-seat__note ui-seat__note--${summary.category}`}>
-          {summary.category === 'accessible' ? <WheelchairIcon size={15} /> : <InfoIcon size={14} />}
-          <span>{note}</span>
+          <span className="ui-sep" aria-hidden>·</span>
+          <span>
+            {strings.fieldRow} <strong>{summary.row}</strong>
+          </span>
+          <span className="ui-sep" aria-hidden>·</span>
+          <span>
+            {strings.fieldSeat} <strong>{summary.seat}</strong>
+          </span>
+          <span className="ui-sep" aria-hidden>·</span>
+          <strong className="ui-seatbar__price">{priceText(summary.price, summary.category)}</strong>
         </p>
-      )}
-
-      <div className="ui-seat__price">
-        <span className="ui-seat__price-label">{strings.fieldPrice}</span>
-        <span className={`ui-seat__price-value${forSale ? '' : ' is-muted'}`}>
-          {priceText(summary.price, summary.category)}
-          {forSale && <span className="ui-seat__per"> {strings.perTicket}</span>}
-        </span>
+        <p className="ui-seatbar__sub">
+          {summary.ringName}
+          {note && (
+            <>
+              <span className="ui-sep" aria-hidden>·</span>
+              {summary.category === 'accessible' && <WheelchairIcon size={13} />} {note}
+            </>
+          )}
+          {summary.estimated && (
+            <>
+              <span className="ui-sep" aria-hidden>·</span>
+              {strings.estimatedNote}
+            </>
+          )}
+          <span className="ui-seatbar__drag">
+            <DragIcon size={13} /> {strings.dragHint}
+          </span>
+        </p>
       </div>
-
-      <div className="ui-seat__actions">
-        <button
-          type="button"
-          className="ui-btn ui-btn--primary"
-          disabled={!forSale}
-          onClick={() => actions.openCheckout()}
-        >
+      <div className="ui-seatbar__actions">
+        <button type="button" className="ui-btn ui-btn--gold" disabled={!forSale} onClick={() => actions.openCheckout()}>
           <TicketIcon />
           {strings.buy}
         </button>
-        <button type="button" className="ui-btn ui-btn--ghost" onClick={() => actions.goToOverview()}>
+        <button type="button" className="ui-btn ui-btn--ghost" onClick={() => actions.back()}>
           <ArrowLeft />
-          {strings.back}
+          {strings.otherSeat}
         </button>
       </div>
-
-      <p className="ui-seat__drag">
-        <DragIcon size={15} />
-        {strings.dragHint}
-      </p>
     </section>
   );
 }

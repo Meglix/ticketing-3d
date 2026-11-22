@@ -15,6 +15,26 @@ export const strings = {
   hintTouch: 'Atinge un sector pentru a vedea priveliștea de pe loc',
   hintMouse: 'Apasă pe un sector pentru a vedea priveliștea de pe loc',
   inTransit: 'Te ducem la locul tău…',
+  inTransitSector: 'Zburăm spre sector…',
+
+  // Intro
+  introSub: 'Vezi terenul de pe locul tău',
+  introSkip: 'Atinge oriunde pentru a începe',
+
+  // Sector focus
+  sectorPanelLabel: 'Sectorul ales',
+  pickSeatTouch: 'Atinge un loc liber',
+  pickSeatMouse: 'Alege un loc liber',
+  freeOf: (free: number, total: number) => `${free} locuri libere din ${total}`,
+  noneFree: 'Niciun loc liber',
+  pressSector: 'Tribuna presei – locurile nu se vând',
+  stateFree: 'liber',
+  stateSold: 'vândut',
+  stateYours: 'locul tău',
+  allSectors: 'Toate sectoarele',
+  seatFree: 'Liber',
+  seatSold: 'Vândut',
+  otherSeat: 'Alt loc',
 
   fromPrice: (lei: string) => `de la ${lei}`,
   notForSale: 'Nu se vinde',

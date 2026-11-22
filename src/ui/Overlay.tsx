@@ -1,10 +1,13 @@
+import { useAppState } from '../state/store.ts';
 import type { Venue } from '../venue/loadVenue.ts';
 import { CheckoutModal } from './CheckoutModal.tsx';
 import { Header } from './Header.tsx';
+import { IntroOverlay } from './IntroOverlay.tsx';
 import { HoverCard } from './HoverCard.tsx';
 import { Legend } from './Legend.tsx';
 import { Loader } from './Loader.tsx';
 import { SeatPanel } from './SeatPanel.tsx';
+import { SectorPanel } from './SectorPanel.tsx';
 import { OverviewHint, TransitStatus } from './StatusHints.tsx';
 import './ui.css';
 
@@ -14,8 +17,10 @@ import './ui.css';
  * Each part subscribes to just the store slice it needs.
  */
 export function Overlay({ venue }: { venue: Venue }) {
+  const intro = useAppState((s) => s.introPlaying);
   return (
-    <div className="ui-overlay">
+    <div className={`ui-overlay${intro ? ' is-intro' : ''}`}>
+      <IntroOverlay venue={venue} />
       <Header venue={venue} />
       {/* Phone: hint stacked above the legend bar. Desktop: `display: contents`, each placed on its own. */}
       <div className="ui-bottom">
@@ -24,6 +29,7 @@ export function Overlay({ venue }: { venue: Venue }) {
       </div>
       <TransitStatus />
       <HoverCard venue={venue} />
+      <SectorPanel venue={venue} />
       <SeatPanel venue={venue} />
       <CheckoutModal venue={venue} />
       <Loader />
