@@ -41,14 +41,28 @@ test('rapid taps on different sectors (within ~300 ms) end on the last one tappe
   await skipIntro(page, false);
   // Each tap targets the sector where it is on screen *now* (the camera is
   // already flying after the first tap), like a user chasing a moving view.
-  const tapped: string[] = [];
-  for (const code of ['2C', '2M2', '1H']) {
-    const p = await point(page, code);
-    if (!p) continue; // not visible from the moving camera at this instant
-    await page.mouse.click(p.x, p.y);
-    tapped.push(code);
-    await page.waitForTimeout(80);
-  }
+  // Software WebGL runs at ~2 fps here, so a point aimed in one frame would be
+  // stale by the time Playwright's input arrives a frame or two later. The
+  // taps are therefore aimed and dispatched in the same task, in the page:
+  // real pointerdown/pointerup/click DOM events on the canvas, which go
+  // through R3F's raycasting and the app's handlers exactly like a user tap.
+  const tapped = await page.evaluate(async (codes) => {
+    const d = (window as unknown as { __clujDemo: DemoSeam }).__clujDemo;
+    const canvas = document.querySelector('canvas')!;
+    const done: string[] = [];
+    for (const code of codes) {
+      const p = d.sectorScreenPoint(code);
+      if (p) {
+        const init = { clientX: p.x, clientY: p.y, bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', isPrimary: true, button: 0 };
+        canvas.dispatchEvent(new PointerEvent('pointerdown', { ...init, buttons: 1 }));
+        canvas.dispatchEvent(new PointerEvent('pointerup', { ...init, buttons: 0 }));
+        canvas.dispatchEvent(new MouseEvent('click', { ...init, buttons: 0 }));
+        done.push(code);
+      }
+      await new Promise((r) => setTimeout(r, 100));
+    }
+    return done;
+  }, ['2C', '2M2', '1H']);
   expect(tapped.length).toBeGreaterThanOrEqual(2);
   await page.waitForFunction(() => !(window as unknown as { __clujDemo: DemoSeam }).__clujDemo.state().inTransit, null, {
     timeout: 60_000,

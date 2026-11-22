@@ -272,3 +272,142 @@ Each entry: **decision** — alternatives — why. Newest at the bottom.
     it, and the e2e now asserts that the hint and legend are visible on both
     viewports.
 
+
+## V2 — "cinematic night"
+
+43. **One shared per-frame `look` state (`src/scene/look.ts`) drives the whole
+    cinematic behaviour:** `holo` (luminous ↔ solid), `intro` (clock),
+    `power` (floodlight level), `speed` (camera speed). It is written once per
+    frame by `<LookDirector/>` (useFrame priority −1, before everything else)
+    and read by each scene component in its own useFrame. Alternatives: React
+    state/context (a re-render per frame), or each component computing its own
+    numbers (the intro, lights and bloom would drift apart). Why: one place to
+    tune, no re-renders, and every part stays in sync.
+
+44. **`holo` comes from camera distance, not from the view state**
+    (smoothstep from 115 m to 240 m from the centre spot). Alternative: a tween
+    started on each view change. Why: the crossfade from luminous model to solid
+    materials then follows the flight by itself, including flights that are
+    re-targeted mid-air. There's no second animation to keep in sync with the camera.
+
+45. **Post-processing via `@react-three/postprocessing` 3.2.2 / `postprocessing`
+    6.39.6 (pinned).** Chain: Bloom (mipmap, threshold 0.92) → speed blur →
+    ACES Filmic tone mapping → SMAA → vignette → film grain. The composer renders
+    in half-float HDR with the renderer's tone mapping off, so tone mapping is
+    an effect near the end. Only light sources go above 1.0 and bloom:
+    floodlight strips ×1.9, lamps ×4, LED text ×1.75, the gold seat. Everything
+    else stays below the threshold, so bloom marks lights rather than haze.
+    ACES Filmic over AgX: chosen for contrast and saturated tier colours. AgX
+    was not A/B-tested in this run.
+
+46. **No depth of field (the brief marks it optional).** Why: in the seat view the
+    things nearest the camera are your own seat and the backs in front, which
+    are exactly what the brief wants in frame. Blurring them works against that,
+    and a full-resolution circle-of-confusion pass is the most expensive effect
+    on a phone. The flights get a speed-driven radial blur instead: a custom
+    `CONVOLUTION` effect whose strength comes from camera speed, so it is
+    zero at rest without any timing logic. It is off on the low tier.
+
+47. **Adaptive quality is one ladder: [max DPR/high, 0.75·max/high, 1/medium,
+    1/low].** drei's `PerformanceMonitor` steps along it. The tiers drop film
+    grain (medium), then SMAA, the speed blur and bloom levels (low).
+    `?dpr=` / `?quality=` pin it. The canvas container exposes `data-quality` /
+    `data-dpr` for the perf spec. Why: one knob per step, cheapest-to-lose first.
+
+48. **Night environment: no surroundings at all** (ground, plaza, hills and trees
+    removed). A camera-following dome shader gives a near-black gradient with
+    a faint warm haze as the lights come on. Lighting: a hemisphere light plus
+    4 spotlights at the roof's leading edge (not one light per lamp: forward
+    shading cost grows with lights × fragments). The visible "floodlights" are
+    emissive strips and instanced lamp quads that bloom.
+
+49. **Cinematic intro on a wall clock (7 s), skippable.** The floodlight
+    groups (one per roof segment, order T1, P2, T2, P1) power on in sequence
+    while the camera orbits in and settles. Wall clock, not summed frame deltas:
+    with software GL at 2 fps, clamped deltas stretched the intro past 2 minutes.
+    A tap, click, drag, wheel or pinch skips it, and so does `prefers-reduced-motion`.
+    **The tap that skips the intro is swallowed** (a capture-phase click
+    listener): otherwise it also selected whatever sector was under it while
+    the camera moved. A robustness e2e covers this.
+
+50. **Luminous overview without new geometry.** The seats' instance colours also
+    feed `totalEmissiveRadiance × uGlow` through a small `onBeforeCompile`
+    patch, so they read as fine light. The structure gets `EdgesGeometry` lines
+    (35° threshold), merged into one additive HDR line set per part, with opacity
+    following `holo` and `power`. Alternative: a separate "hologram" scene.
+    Why: one scene that crossfades costs nothing extra to keep in sync.
+
+51. **The ~40 price pills are gone.** Stand names stay as discreet labels, and
+    the sector name and price appear on hover (desktop) and in the sector panel.
+    The labels are placed in screen space *outside* the bowl: anchored on the
+    roof cornice, pushed away from the bowl's on-screen centre by half their
+    own size plus 10 px, clamped to the viewport, and turned along the rim when
+    there is no room beside the bowl (phones). An earlier fixed 3D anchor put
+    "TRIBUNA II" over its own seats and behind the hint pill, and the end-stand
+    names over the video screens.
+
+52. **Three-level flow `overview → sector → seat`, one level back at a time.**
+    The chosen (gold) seat survives going back to its sector, so "Alt loc"
+    shows it in context. Browser history pushes one entry per level and the
+    back gesture pops one level. When going up through the UI we consume the
+    entries with `history.go(-n)` and ignore our own popstates (`ownPops`).
+
+53. **Sector focus pose: from over the field, 3/4 view** (22° to the side, 24°
+    elevation, FOV 42°, framed to about 78 % of the screen). The camera is
+    always on the field side of the roof edge, so no roof gets in the way. Flight
+    tests cover overview → focus → seat → focus → overview for every sector,
+    on laptop and phone aspect ratios.
+
+54. **Seat picking = an invisible InstancedMesh of boxes for the focused sector
+    only** (`material.visible = false` is still raycast; instance i is seat
+    `seatStart + i`). Alternatives: GPU colour picking (an extra render
+    pass and async read-back), or raycasting all 30,335 detailed seats. Why:
+    about 1,000 boxes keep every pointer move cheap, and the result is exact. A
+    unit test raycasts from the real focus camera to sampled seats.
+    **Touch forgiveness:** a tap that lands on a sold seat takes the nearest
+    free seat within 28 px on screen. On a phone a seat is about 8 px wide in
+    the sector focus.
+
+55. **Demo availability is its own clearly labelled module (`src/demo/`)** and
+    isn't part of the venue config. It is deterministic (seeded mulberry32 plus
+    an FNV hash per sector), so screenshots, tests and the live demo agree. Sales
+    come in group "bookings" of 1–6 adjacent seats, weighted toward lower rows
+    and the centre, and stop at an exact per-sector target between 62 and 73 %.
+    Press seats are never for sale.
+
+56. **Seat view is over the shoulder, not at the exact eye point:** 0.85 m
+    behind (0.3 m on a last row, against the back wall), 0.3 m higher, looking
+    along the seat's facing, 11° down. Alternative: the exact eye point (V1).
+    Why: the brief wants your own seat edge, armrests and the backs in front in
+    frame. From the eye point your own seat sits under and behind the lens and
+    is invisible. The offset is small enough that the view of the pitch is the
+    same. The V1 sightline tests keep using the true eye point, and the new
+    flight tests use the new pose.
+
+57. **Seat model: three LODs sharing one set of instance buffers.** Far is
+    4 triangles, near 20, detail about 70 (pan, lip, back, headrest, armrest,
+    post, leg). Detail is used only for the focused sector, and that sector's
+    near/far instances are hidden by zeroing their matrices. Why: 30,335 seats ×
+    70 triangles would be about 2.1 M triangles for no visible gain at a distance.
+
+58. **Gold means "your seat" and nothing else.** The VIP tier was gold in V1.
+    A first recolour to platinum (#dfe3ea) bloomed into a white block in the
+    luminous overview, so it is now silver (#b4bfd2), at about the
+    luminance of the other tiers. The gold seat's glow and its point light fade
+    with camera distance; at 1 m in the seat view full strength blew it out to
+    a flat slab.
+
+59. **LED fascia boards: one canvas texture atlas (1024×64 per row) and one
+    merged geometry, so one draw call.** The text comes from the config prices
+    ("SECTOR 1C · DE LA 150 LEI", "2P · PRESĂ"). It is pre-squeezed horizontally
+    per board so long boards don't stretch the letters, and drawn with HDR
+    colour that follows `power`, so it blooms slightly and switches on with the lights.
+
+60. **e2e under software WebGL:** stage stills are JPEG q90 (film grain makes
+    PNGs about 3.6 MB each). The desktop runs at DPR 1 (1440×900 images) and the
+    phone at DPR 2. The rapid-taps test aims and dispatches its taps in the same
+    page task (real DOM pointer events, through R3F's raycaster). Why: at
+    about 2 fps a point aimed in one frame was stale when Playwright's input
+    arrived a frame later. The app wasn't at fault (traced with per-frame timing:
+    no single long frame, just 400–500 ms frames). The V1 screenshots are kept in
+    `screenshots/v1/`.
