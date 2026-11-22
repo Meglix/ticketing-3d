@@ -75,7 +75,7 @@ const TIERS: PriceTier[] = [
   { id: 'p50', label: '50 lei', price: 50, color: '#d0569c' },
   { id: 'p60', label: '60 lei', price: 60, color: '#e0607e' },
   { id: 'p100', label: '100 lei', price: 100, color: '#f08a3e' },
-  { id: 'vip', label: 'VIP · 150 lei', price: 150, color: '#dfe3ea' }, // platinum: gold is reserved for "your seat"
+  { id: 'vip', label: 'VIP · 150 lei', price: 150, color: '#b4bfd2' }, // silver: gold is reserved for "your seat"; kept at the other tiers' luminance so it doesn't bloom white
   { id: 'press', label: 'Presă', price: null, color: '#8d96a3' },
 ];
 

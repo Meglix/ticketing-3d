@@ -3,7 +3,8 @@ import { InstancedMesh, Matrix4, MeshBasicMaterial, PerspectiveCamera, Raycaster
 import raw from '../../venues/cluj-arena.json';
 import { sectorFocusPose } from '../camera/focus.ts';
 import { loadVenue } from '../venue/loadVenue.ts';
-import { pickBoxGeometry, pickedSeatIndex, PICK_BOX, sectorPickMatrices } from './seatPicking.ts';
+import { availabilityFor, SOLD } from '../demo/availability.ts';
+import { nearestAvailableSeat, pickBoxGeometry, pickedSeatIndex, PICK_BOX, sectorPickMatrices, seatScreenAnchor } from './seatPicking.ts';
 
 const venue = loadVenue(raw);
 const seats = venue.manifest.seats;
@@ -67,5 +68,44 @@ describe('seat picking (instanceId raycast, focused sector only)', () => {
     expect(pickedSeatIndex(sector, 0)).toBe(sector.seatStart);
     expect(pickedSeatIndex(sector, undefined)).toBeNull();
     expect(pickedSeatIndex(sector, sector.seatEnd - sector.seatStart)).toBeNull();
+  });
+});
+
+describe('touch forgiveness (nearestAvailableSeat)', () => {
+  const sold = availabilityFor(venue.manifest);
+  const free = (i: number) => sold[i] !== SOLD;
+  const size = { width: 390, height: 844 };
+
+  function screenOf(index: number, cam: PerspectiveCamera) {
+    const v = seatScreenAnchor(seats[index]!, new Vector3()).project(cam);
+    return { x: (v.x * 0.5 + 0.5) * size.width, y: (-v.y * 0.5 + 0.5) * size.height };
+  }
+
+  it('a tap on a sold seat takes the closest available seat on screen, never a sold one', () => {
+    const sector = venue.sectorByCode.get('1C')!;
+    const cam = focusCamera('1C', size.width / size.height);
+    let checked = 0;
+    for (let i = sector.seatStart; i < sector.seatEnd; i += 7) {
+      if (free(i)) continue;
+      const tap = screenOf(i, cam);
+      const got = nearestAvailableSeat(seats, sector, free, cam, size, tap, 28);
+      if (got === null) continue;
+      expect(free(got), seats[got]!.id).toBe(true);
+      // Nothing available is closer to the tap than what it chose.
+      const d = (j: number) => Math.hypot(screenOf(j, cam).x - tap.x, screenOf(j, cam).y - tap.y);
+      for (let j = sector.seatStart; j < sector.seatEnd; j++) if (free(j)) expect(d(j)).toBeGreaterThanOrEqual(d(got) - 1e-6);
+      expect(d(got)).toBeLessThanOrEqual(28);
+      checked++;
+    }
+    expect(checked).toBeGreaterThan(5);
+  });
+
+  it('takes the tapped seat itself when it is available, and nothing when no free seat is within reach', () => {
+    const sector = venue.sectorByCode.get('1C')!;
+    const cam = focusCamera('1C', size.width / size.height);
+    const first = Array.from({ length: sector.seatEnd - sector.seatStart }, (_, k) => sector.seatStart + k).find(free)!;
+    expect(nearestAvailableSeat(seats, sector, free, cam, size, screenOf(first, cam), 28)).toBe(first);
+    expect(nearestAvailableSeat(seats, sector, () => false, cam, size, screenOf(first, cam), 28)).toBeNull();
+    expect(nearestAvailableSeat(seats, sector, free, cam, size, { x: -500, y: -500 }, 28)).toBeNull();
   });
 });

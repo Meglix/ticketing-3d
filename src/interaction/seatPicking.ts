@@ -1,4 +1,4 @@
-import { BoxGeometry, Matrix4, Quaternion, Vector3 } from 'three';
+import { BoxGeometry, type Camera, Matrix4, Quaternion, Vector3 } from 'three';
 import type { Seat, SectorInfo } from '../geometry/types.ts';
 
 /**
@@ -51,4 +51,44 @@ export function pickedSeatIndex(sector: SectorInfo, instanceId: number | undefin
   if (instanceId === undefined || instanceId < 0) return null;
   const index = sector.seatStart + instanceId;
   return index < sector.seatEnd ? index : null;
+}
+
+/** Where a seat shows on screen: the upper part of its backrest (the lower part hides behind the row in front). */
+export function seatScreenAnchor(seat: Pick<Seat, 'position'>, out: Vector3): Vector3 {
+  return out.set(seat.position.x, seat.position.y + PICK_BOX.lift + PICK_BOX.height / 2 - 0.08, seat.position.z);
+}
+
+const anchor = new Vector3();
+
+/**
+ * Touch forgiveness. On a phone a seat in the sector focus is ~8 px wide and a
+ * fingertip covers several, so a tap that lands on a sold seat (or between
+ * seats) takes the available seat nearest to the tap on screen, within
+ * `radiusPx`. Returns its manifest index, or null when none is that close.
+ * `point` and `size` are in CSS pixels of the canvas.
+ */
+export function nearestAvailableSeat(
+  seats: Seat[],
+  sector: SectorInfo,
+  isAvailable: (index: number) => boolean,
+  camera: Camera,
+  size: { width: number; height: number },
+  point: { x: number; y: number },
+  radiusPx: number,
+): number | null {
+  let best: number | null = null;
+  let bestD2 = radiusPx * radiusPx;
+  for (let i = sector.seatStart; i < sector.seatEnd; i++) {
+    if (!isAvailable(i)) continue;
+    seatScreenAnchor(seats[i]!, anchor).project(camera);
+    if (anchor.z > 1) continue; // behind the camera
+    const dx = (anchor.x * 0.5 + 0.5) * size.width - point.x;
+    const dy = (-anchor.y * 0.5 + 0.5) * size.height - point.y;
+    const d2 = dx * dx + dy * dy;
+    if (d2 < bestD2) {
+      bestD2 = d2;
+      best = i;
+    }
+  }
+  return best;
 }

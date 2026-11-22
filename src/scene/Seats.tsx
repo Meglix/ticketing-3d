@@ -19,6 +19,7 @@ import { seatMatrix } from '../interaction/seatPicking.ts';
 import { useAppState } from '../state/store.ts';
 import type { Venue } from '../venue/loadVenue.ts';
 import { look } from './look.ts';
+import { smoothstep } from './meshData.ts';
 import { PALETTE } from './palette.ts';
 
 /**
@@ -145,7 +146,7 @@ export function Seats({ venue }: { venue: Venue }) {
       near: glowMaterial(glow, { roughness: 0.55, metalness: 0 }),
       far: glowMaterial(glow, { roughness: 0.55, metalness: 0, side: DoubleSide }),
       detail: glowMaterial(detailGlow, { roughness: 0.48, metalness: 0.05 }),
-      gold: new MeshStandardMaterial({ color: GOLD, emissive: GOLD, emissiveIntensity: 0.8, roughness: 0.35, metalness: 0.3 }),
+      gold: new MeshStandardMaterial({ color: GOLD, emissive: GOLD, emissiveIntensity: 0.8, roughness: 0.6, metalness: 0 }),
       hover: new MeshStandardMaterial({ color: '#dfe9ff', emissive: '#9ec2ff', emissiveIntensity: 0.7, roughness: 0.4 }),
     }),
     [glow, detailGlow],
@@ -272,7 +273,12 @@ export function Seats({ venue }: { venue: Venue }) {
     if (farRef.current) farRef.current.visible = far;
     // Luminous overview: seats emit their colour; up close they are lit instead.
     glow.value = (0.1 + 0.9 * look.holo) * (0.35 + 0.65 * look.power);
-    mats.gold.emissiveIntensity = 0.75 + 0.25 * Math.sin(performance.now() / 380); // a soft pulse
+    // The chosen seat pulses softly. Up close (seat view: the camera is ~1 m
+    // behind it) full strength would blow it out to a flat white-gold slab, so
+    // glow and light fade with the camera's distance to the seat.
+    const near = chosen ? smoothstep(2.5, 18, camera.position.distanceTo(chosen.position)) : 1;
+    mats.gold.emissiveIntensity = (0.18 + 0.57 * near) * (1 + 0.33 * Math.sin(performance.now() / 380));
+    if (goldLightRef.current) goldLightRef.current.intensity = 0.6 + 1.9 * near;
   });
 
   useLayoutEffect(
