@@ -40,7 +40,6 @@ interface Board {
   y0: number;
   y1: number;
   text: string;
-  accent: string;
 }
 
 function boardText(sector: SectorConfig, price: number | null): string {
@@ -56,13 +55,13 @@ function boardsOf(venue: Venue): Board[] {
   for (const stand of venue.config.stands) {
     for (const ring of stand.rings) {
       if (ring.parapetHeight <= 0) continue;
-      for (const sector of ring.sectors) out.push(board(ring, sector, tiers.get(sector.tier)?.price ?? null, tiers.get(sector.tier)?.color ?? '#ffcf8a'));
+      for (const sector of ring.sectors) out.push(board(ring, sector, tiers.get(sector.tier)?.price ?? null));
     }
   }
   return out;
 }
 
-function board(ring: RingConfig, sector: SectorConfig, price: number | null, accent: string): Board {
+function board(ring: RingConfig, sector: SectorConfig, price: number | null): Board {
   const first = sector.rows[0]!;
   const front = treadEdges(sector.rows)[0]! - PARAPET_THICKNESS;
   const top = first.elevation + ring.parapetHeight;
@@ -76,7 +75,6 @@ function board(ring: RingConfig, sector: SectorConfig, price: number | null, acc
     y0: bottom + margin,
     y1: top - margin,
     text: boardText(sector, price),
-    accent,
   };
 }
 
@@ -95,14 +93,14 @@ function drawAtlas(boards: Board[], lengths: number[]): HTMLCanvasElement {
     ctx.fillStyle = 'rgba(255, 196, 120, 0.85)';
     ctx.fillRect(0, y + 3, ROW_W, 2);
     ctx.fillRect(0, y + ROW_H - 5, ROW_W, 2);
-    ctx.fillStyle = b.accent;
-    ctx.fillRect(14, y + 20, 6, ROW_H - 40);
     // Text, pre-scaled horizontally so the letters keep their shape on a board
     // of real length L and height H (texels per metre differ along u and v).
     const L = lengths[i]!;
     const H = b.y1 - b.y0;
     const sx = ROW_W / L / (ROW_H / H);
-    let size = 30;
+    // As large as the board allows: up to ~65 % of its height (readable from
+    // the far side of the bowl), smaller only when the text would not fit.
+    let size = 42;
     ctx.font = `700 ${size}px Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif`;
     const width = () => ctx.measureText(b.text).width * sx;
     while (width() > ROW_W - 60 && size > 12) {

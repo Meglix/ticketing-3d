@@ -93,7 +93,8 @@ export function Environment({ venue }: { venue: Venue }) {
     spotRefs.current.forEach((s) => {
       if (s) s.intensity = SPOT_INTENSITY * look.power;
     });
-    if (hemiRef.current) hemiRef.current.intensity = 0.18 + 0.32 * look.power;
+    // Dim ambient: the floodlit pitch, not the stands, sets the exposure.
+    if (hemiRef.current) hemiRef.current.intensity = 0.14 + 0.22 * look.power;
   });
 
   useEffect(() => () => dome.dispose(), [dome]);

@@ -59,13 +59,22 @@ function merge(parts: BufferGeometry[]): BufferGeometry {
   return merged;
 }
 
+/** Per-vertex "this part glows in the luminous overview" (1) or not (0). */
+function withGlowMask<T extends BufferGeometry>(g: T, value: 0 | 1): T {
+  const n = g.getAttribute('position').count;
+  g.setAttribute('glowMask', new Float32BufferAttribute(new Float32Array(n).fill(value), 1));
+  return g;
+}
+
 function makeNearSeat(): BufferGeometry {
   const pan = openBottomBox(0.44, 0.07, 0.4);
   pan.translate(0, 0.44, 0.03);
   const back = openBottomBox(0.44, 0.42, 0.06);
   back.rotateX(-0.14);
   back.translate(0, 0.68, -0.18);
-  return merge([pan, back]);
+  // Only the backrests glow: each row reads as a thin line of light over
+  // dark pans and treads (the "fine light" of the reference), not a fill.
+  return merge([withGlowMask(pan, 0), withGlowMask(back, 1)]);
 }
 
 /** Far LOD: the pan's top and the backrest's front as two quads, drawn double-sided. */
@@ -77,6 +86,7 @@ function makeFarSeat(): BufferGeometry {
   ];
   const g = new BufferGeometry();
   g.setAttribute('position', new Float32BufferAttribute(v, 3));
+  g.setAttribute('glowMask', new Float32BufferAttribute([0, 0, 0, 0, 1, 1, 1, 1], 1)); // backrest quad only
   g.setIndex([0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7]);
   g.computeVertexNormals();
   return g;
@@ -112,16 +122,35 @@ function makeDetailSeat(): BufferGeometry {
   return merge([pan, lip, back, wing(1), wing(-1), head, arm, armPost, leg]);
 }
 
-/** Make instance colours also emissive, scaled by a shared uniform (the luminous look). */
-function glowMaterial(glow: { value: number }, opts: ConstructorParameters<typeof MeshStandardMaterial>[0]) {
+/**
+ * Make instance colours also emissive, scaled by a shared uniform (the
+ * luminous look). With `masked`, only geometry whose `glowMask` attribute is 1
+ * emits, and the lit (diffuse) colour is scaled by `diffuse` (dark in the
+ * luminous overview, so the glowing backrests carry the picture).
+ */
+function glowMaterial(
+  glow: { value: number },
+  opts: ConstructorParameters<typeof MeshStandardMaterial>[0],
+  masked?: { diffuse: { value: number } },
+) {
   const m = new MeshStandardMaterial(opts);
   m.onBeforeCompile = (shader) => {
     shader.uniforms.uGlow = glow;
+    if (masked) {
+      shader.uniforms.uDiffuse = masked.diffuse;
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nattribute float glowMask;\nvarying float vGlowMask;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvGlowMask = glowMask;');
+    }
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform float uGlow;')
+      .replace(
+        '#include <common>',
+        `#include <common>\nuniform float uGlow;${masked ? '\nuniform float uDiffuse;\nvarying float vGlowMask;' : ''}`,
+      )
+      .replace('#include <color_fragment>', `#include <color_fragment>${masked ? '\ndiffuseColor.rgb *= uDiffuse;' : ''}`)
       .replace(
         '#include <emissivemap_fragment>',
-        '#include <emissivemap_fragment>\n#if defined( USE_INSTANCING_COLOR ) || defined( USE_COLOR )\n totalEmissiveRadiance += vColor.rgb * uGlow;\n#endif',
+        `#include <emissivemap_fragment>\n#if defined( USE_INSTANCING_COLOR ) || defined( USE_COLOR )\n totalEmissiveRadiance += vColor.rgb * uGlow${masked ? ' * vGlowMask' : ''};\n#endif`,
       );
   };
   return m;
@@ -155,18 +184,20 @@ export function Seats({ venue }: { venue: Venue }) {
   const geo = useMemo(() => ({ near: makeNearSeat(), far: makeFarSeat(), detail: makeDetailSeat() }), []);
   const glow = useMemo(() => ({ value: 0.6 }), []);
   const detailGlow = useMemo(() => ({ value: 0.12 }), []);
+  const diffuse = useMemo(() => ({ value: 1 }), []);
   const mats = useMemo(
     () => ({
-      near: glowMaterial(glow, { roughness: 0.55, metalness: 0 }),
-      far: glowMaterial(glow, { roughness: 0.55, metalness: 0, side: DoubleSide }),
+      near: glowMaterial(glow, { roughness: 0.55, metalness: 0 }, { diffuse }),
+      far: glowMaterial(glow, { roughness: 0.55, metalness: 0, side: DoubleSide }, { diffuse }),
       detail: glowMaterial(detailGlow, { roughness: 0.48, metalness: 0.05 }),
       gold: new MeshStandardMaterial({ color: GOLD, emissive: GOLD, emissiveIntensity: 0.8, roughness: 0.6, metalness: 0 }),
-      // Cyan and raised: distinct from every tier colour, including the silver VIP seats.
-      hover: new MeshStandardMaterial({ color: '#c8f4ff', emissive: '#2fd2ff', emissiveIntensity: 1.6, roughness: 0.4 }),
+      // Saturated cyan and raised: distinct from every tier colour, including the
+      // silver VIP seats (a bright, near-white cyan read as "available").
+      hover: new MeshStandardMaterial({ color: '#00b4f0', emissive: '#00a6ff', emissiveIntensity: 0.9, roughness: 0.4 }),
       /** The pin above your seat in the sector focus (HDR gold, unlit: it blooms). */
       pin: new MeshBasicMaterial({ color: new Color(PALETTE.gold).multiplyScalar(2.2), transparent: true, depthWrite: false }),
     }),
-    [glow, detailGlow],
+    [glow, detailGlow, diffuse],
   );
   const colors = useMemo(() => new InstancedBufferAttribute(new Float32Array(count * 3), 3), [count]);
   const detailColors = useMemo(() => new InstancedBufferAttribute(new Float32Array(maxSector * 3), 3), [maxSector]);
@@ -289,7 +320,8 @@ export function Seats({ venue }: { venue: Venue }) {
     if (nearRef.current) nearRef.current.visible = !far;
     if (farRef.current) farRef.current.visible = far;
     // Luminous overview: seats emit their colour; up close they are lit instead.
-    glow.value = (0.1 + 0.6 * look.holo) * (0.35 + 0.65 * look.power);
+    glow.value = (0.1 + 1.1 * look.holo) * (0.35 + 0.65 * look.power);
+    diffuse.value = 1 - 0.75 * look.holo; // dark seat bodies in the luminous overview
     // The chosen seat pulses softly. Up close (seat view: the camera is ~1 m
     // behind it) full strength would blow it out to a flat white-gold slab, so
     // glow and light fade with the camera's distance to the seat.

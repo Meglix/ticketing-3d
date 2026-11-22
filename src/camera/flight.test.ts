@@ -255,3 +255,33 @@ describe('V2 flights: overview → sector focus → seat view (and back)', () =>
     }
   });
 });
+
+describe('flight orientation (no spin)', () => {
+  const lastRow = new Map<string, number>();
+  for (const st of config.stands)
+    for (const ring of st.rings) for (const sec of ring.sectors) lastRow.set(sec.code, sec.rows[sec.rows.length - 1]!.row);
+  const pitchOf = (p: CameraPose) => Math.atan2(p.target.y - p.position.y, Math.hypot(p.target.x - p.position.x, p.target.z - p.position.z));
+  const yawOf = (p: CameraPose) => Math.atan2(p.target.z - p.position.z, p.target.x - p.position.x);
+
+  it('never looks further down than its two end poses, and turns evenly (sector focus → seat view, every sector, laptop and phone)', () => {
+    const N = 220;
+    for (const aspect of [1440 / 900, 390 / 844]) {
+      for (const sector of manifest.sectors) {
+        const seat = manifest.seats[sector.representativeSeat]!;
+        const from = sectorFocusPose(venue, sector.code, aspect);
+        const to = seatViewPose(seat, config.eyeHeight, aspect, seat.row === lastRow.get(sector.code));
+        const flight = planFlight(env, from, to);
+        const lowest = Math.min(pitchOf(from), pitchOf(to));
+        let prevYaw = yawOf(flight.sample(0));
+        for (let i = 1; i <= N; i++) {
+          const pose = flight.sample(i / N);
+          expect(pitchOf(pose), `${sector.code} pitch @${i}`).toBeGreaterThanOrEqual(lowest - 1e-6);
+          const yaw = yawOf(pose);
+          const step = Math.abs(Math.atan2(Math.sin(yaw - prevYaw), Math.cos(yaw - prevYaw)));
+          expect(step, `${sector.code} yaw step @${i}`).toBeLessThanOrEqual(Math.PI / N + 1e-6);
+          prevYaw = yaw;
+        }
+      }
+    }
+  });
+});

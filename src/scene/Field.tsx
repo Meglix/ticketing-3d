@@ -1,3 +1,4 @@
+import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo } from 'react';
 import {
   BufferGeometry,
@@ -15,6 +16,7 @@ import {
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Venue } from '../venue/loadVenue.ts';
+import { look } from './look.ts';
 import { PALETTE } from './palette.ts';
 
 /**
@@ -291,6 +293,16 @@ export function Field({ venue }: { venue: Venue }) {
       net: new MeshStandardMaterial({ color: '#ffffff', transparent: true, opacity: 0.28, side: 2, depthWrite: false }),
     };
   }, []);
+
+  // Luminous overview: the pitch and track step back (about 55 %) so the glowing
+  // bowl, not a bright lawn, carries the picture; full brightness up close.
+  const base = useMemo(() => ({ track: mats.track.color.clone(), apron: mats.apron.color.clone() }), [mats]);
+  useFrame(() => {
+    const k = 1 - 0.45 * look.holo;
+    mats.grass.color.setScalar(k);
+    mats.track.color.copy(base.track).multiplyScalar(k);
+    mats.apron.color.copy(base.apron).multiplyScalar(k);
+  });
 
   useEffect(
     () => () => {

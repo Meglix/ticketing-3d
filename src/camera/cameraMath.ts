@@ -246,17 +246,30 @@ export function clampLook(base: LookAngles, look: LookAngles, limits = SEAT_LOOK
 /** How far behind the seat centre the V2 seat camera sits (m); 0.3 in a last row (back wall). */
 export const SEAT_VIEW_BACK = 0.85;
 export const SEAT_VIEW_BACK_LAST_ROW = 0.3;
-/** Extra height over the seated eye point (m): the camera looks over your own seat back. */
-export const SEAT_VIEW_LIFT = 0.14;
-/** Extra downward tilt of the initial look, so armrests and the rows in front are in frame. */
-export const SEAT_VIEW_DOWN = deg(13);
+/** Extra height over the seated eye point (m): high enough that the rows in front show over your own seat back. */
+export const SEAT_VIEW_LIFT = 0.3;
+/** Top of a seat's backrest relative to its tread point (matches the seat model in scene/Seats.tsx). */
+export const SEAT_BACK_TOP = { up: 0.955, behind: 0.215 };
+/**
+ * Where the top of your own seat back sits on screen in the initial seat view
+ * (NDC y: −1 = bottom edge, 1 = top): just above the UI. A laptop's seat bar is
+ * a slim pill (top ≈ −0.81); a phone's seat card is taller (top ≈ −0.61).
+ */
+export const seatTopOnScreen = (aspect: number): number => (isPortrait(aspect) ? -0.42 : -0.62);
+/** Bounds of the initial seat-view pitch (a last-row camera sits almost above its own seat). */
+const SEAT_VIEW_PITCH = { min: deg(-26), max: deg(-6) };
 
 /**
  * The V2 seat-view camera. Like the reference, it sits just behind and above
- * the seated eye point (0.85 m back, 0.14 m up), looking straight ahead along
+ * the seated eye point (0.85 m back, 0.3 m up), looking straight ahead along
  * the seat, so the bottom of the frame shows your own seat back and armrests
- * and the backs of the seats in front. Look-around limits still centre on
- * `focus`. The exact eye point (seatPose) is what the sightline maths uses.
+ * and, over it, the backs of the seats in front. The initial pitch is solved
+ * from the geometry so that the top of your own seat back lands at the same
+ * screen height (just above the UI) for every seat on every screen shape. A
+ * fixed "N° down" put the seat at very different places on lower- and
+ * upper-ring seats, and filled ~30 % of a phone with it. Look-around limits
+ * still centre on `focus`. The exact eye point (seatPose) is what the
+ * sightline maths uses.
  */
 export function seatViewPose(
   seat: { position: Vec3; facing: { x: number; z: number } },
@@ -272,15 +285,13 @@ export function seatViewPose(
     seat.position.z - seat.facing.z * back,
   );
   const fov = seatFov(aspect);
-  const base = anglesOf(eye, focus);
-  // Look straight ahead along the seat (your own seat at the bottom centre),
-  // pitched like the view towards the centre spot, plus a little down. Tall
-  // portrait screens already tilt down (seatTilt); adding both made your own
-  // seat fill ~40 % of a phone screen, so the larger of the two applies.
-  const look = {
-    yaw: Math.atan2(seat.facing.z, seat.facing.x),
-    pitch: Math.max(SEAT_LOOK_LIMITS.minPitch, base.pitch - Math.max(SEAT_VIEW_DOWN, seatTilt(aspect))),
-  };
+  // Depression of the seat-back top seen from the camera (it is straight ahead).
+  const ahead = back - SEAT_BACK_TOP.behind;
+  const depression = Math.atan2(eyeHeight + SEAT_VIEW_LIFT - SEAT_BACK_TOP.up, Math.max(0.05, ahead));
+  // A point at angle a below the view axis projects to NDC y = −tan(a)/tan(fov/2).
+  const below = Math.atan(-seatTopOnScreen(aspect) * Math.tan(deg(fov) / 2));
+  const pitch = clamp(below - depression, SEAT_VIEW_PITCH.min, SEAT_VIEW_PITCH.max);
+  const look = { yaw: Math.atan2(seat.facing.z, seat.facing.x), pitch: Math.max(SEAT_LOOK_LIMITS.minPitch, pitch) };
   return { position: eye, target: add(eye, scale(directionOf(look), length(sub(focus, eye)))), fov };
 }
 

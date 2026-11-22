@@ -39,6 +39,16 @@ export function skipIntro(): void {
 
 export const introDone = (): boolean => look.intro >= INTRO_SECONDS;
 
+/**
+ * Structure lines are additive: on a small screen the same edges fall into a
+ * quarter of the pixels and add up to white, drowning the seats' tier
+ * colours. Scale their brightness with the canvas size (1 on a laptop, ~0.5
+ * on a phone).
+ */
+export function lineDensity(size: { width: number; height: number }): number {
+  return Math.min(1, Math.max(0.45, Math.min(size.width, size.height) / 820));
+}
+
 /** Camera distance (m from the centre spot) → holo factor. Overview ≈ 300–500 m, sector focus ≈ 60–100 m. */
 export function holoForDistance(distance: number): number {
   return smoothstep(115, 240, distance);

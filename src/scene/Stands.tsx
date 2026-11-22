@@ -13,7 +13,7 @@ import {
 import { sectorPointerHandlers } from '../interaction/sectorHandlers.ts';
 import { useAppState } from '../state/store.ts';
 import type { Venue } from '../venue/loadVenue.ts';
-import { look } from './look.ts';
+import { lineDensity, look } from './look.ts';
 import { toBufferGeometry } from './meshData.ts';
 import { PALETTE } from './palette.ts';
 
@@ -96,10 +96,10 @@ export function Stands({ venue }: { venue: Venue }) {
   }, []);
 
   // Crossfade every frame (a few material properties, no allocations).
-  useFrame(() => {
+  useFrame(({ size }) => {
     const h = look.holo;
     for (const m of [mats.base, mats.hover, mats.focus]) m.color.copy(SOLID_CONCRETE).lerp(HOLO_CONCRETE, h);
-    mats.lines.opacity = (0.04 + 0.62 * h) * (0.25 + 0.75 * look.power);
+    mats.lines.opacity = (0.04 + 0.62 * h) * (0.25 + 0.75 * look.power) * lineDensity(size);
     mats.highlight.opacity = 0.5 + 0.45 * h;
   });
 

@@ -18,7 +18,7 @@ import {
 import { frameAt, offsetLength, paramAtOffsetLength, pointAt } from '../geometry/roundedRect.ts';
 import type { Beam } from '../geometry/types.ts';
 import type { Venue } from '../venue/loadVenue.ts';
-import { look } from './look.ts';
+import { lineDensity, look } from './look.ts';
 import { toBufferGeometry } from './meshData.ts';
 import { PALETTE } from './palette.ts';
 
@@ -156,7 +156,7 @@ export function Roof({ venue }: { venue: Venue }) {
   // Many overlapping translucent parts (fins, trusses) would add up to a grey
   // veil, so those fade out completely and stop drawing.
   const last = useRef(-1);
-  useFrame(() => {
+  useFrame(({ size }) => {
     const f = look.holo;
     const key = f + look.power * 7; // also re-run while the intro powers the lights up
     if (Math.abs(key - last.current) < 0.002) return;
@@ -178,7 +178,7 @@ export function Roof({ venue }: { venue: Venue }) {
     set(trussRef.current, mats.truss, 1, 0, fast);
     set(columnRef.current, mats.column, 1, 0, fast);
     // No base level: up close a faint far roof edge read as a stray dashed line in the sky.
-    mats.edge.opacity = 0.6 * f * (0.3 + 0.7 * look.power);
+    mats.edge.opacity = 0.6 * f * (0.3 + 0.7 * look.power) * lineDensity(size);
   });
 
   useEffect(

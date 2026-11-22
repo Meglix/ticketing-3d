@@ -1224,7 +1224,7 @@ button {
    V2 — cinematic night: darker glass, slimmer bars, gold actions.
    ========================================================================== */
 :root {
-  --ui-bg: rgba(7, 10, 15, 0.64);
+  --ui-bg: rgba(7, 9, 13, 0.8); /* dark enough that panels don't take on the pitch / gold seat colour */
   --ui-bg-solid: rgba(10, 13, 19, 0.97);
   --ui-border: rgba(255, 255, 255, 0.085);
   --ui-text: #eef2f8;
@@ -1327,7 +1327,7 @@ body {
   font-size: 10.5px;
   font-weight: 500;
   color: rgba(255, 226, 163, 0.72);
-  background: rgba(16, 12, 4, 0.82); /* opaque enough that a glowing LED board never shows through */
+  background: rgba(14, 11, 5, 0.95); /* opaque: a glowing LED board never shows through */
   border-color: rgba(245, 185, 66, 0.22);
 }
 @media (min-width: 768px) {
@@ -1591,4 +1591,33 @@ body {
 }
 .ui-overlay.is-overview:not(.is-intro)::after {
   opacity: 1;
+}
+
+/* Glass that stays neutral over a bright scene (review round 2). */
+.ui-seatbar,
+.ui-sectorbar,
+.ui-panel {
+  -webkit-backdrop-filter: blur(18px) saturate(105%);
+  backdrop-filter: blur(18px) saturate(105%);
+}
+/* Inside a clipped dot list the tier dot's glow would be cut on its left: a quiet ring instead. */
+.ui-dots .ui-seatbar__dot {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08);
+}
+/* Two balanced lines instead of a lone word on the second (phone hint). */
+.ui-hint {
+  text-wrap: balance;
+}
+/* Intro: a soft dark pool behind the title so it reads over the lit pitch. */
+.ui-intro::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(760px, 110vw);
+  height: 300px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(closest-side, rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0));
+  pointer-events: none;
+  z-index: -1;
 }

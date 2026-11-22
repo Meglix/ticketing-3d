@@ -2,7 +2,7 @@ import { signedDistance, type RoundedRectSpec } from '../geometry/roundedRect.ts
 import { standSection } from '../geometry/structure.ts';
 import type { Vec3 } from '../geometry/types.ts';
 import type { VenueConfig } from '../venue/schema.ts';
-import { add, length, lerp, lerpNumber, normalize, scale, sub, vec, type CameraPose } from './cameraMath.ts';
+import { add, anglesOf, directionOf, length, lerp, lerpNumber, normalize, scale, sub, vec, type CameraPose } from './cameraMath.ts';
 
 /**
  * Camera flights that never pass through the roof or the stands.
@@ -175,14 +175,28 @@ export function planFlight(env: FlightEnvelope, from: CameraPose, to: CameraPose
     return end;
   };
 
+  // Orientation: interpolate the view DIRECTION (yaw on the shortest arc,
+  // pitch linearly), not the look-target point. Lerping the target from the
+  // sector (behind the camera's destination) to the far side of the field
+  // swept it right under the moving camera: the view tipped straight down and
+  // spun ~180° in a few frames. With angles, pitch never leaves the range of
+  // its two endpoints and the turn is spread over the whole flight.
+  const look0 = anglesOf(from.position, from.target);
+  const look1 = anglesOf(to.position, to.target);
+  const dYaw = Math.atan2(Math.sin(look1.yaw - look0.yaw), Math.cos(look1.yaw - look0.yaw));
+  const dist0 = length(sub(from.target, from.position));
+  const dist1 = length(sub(to.target, to.position));
+
   return {
     waypoints: [start, ...(startPortal ? [startPortal] : []), ...(endPortal ? [endPortal] : []), end],
     sample(u: number): CameraPose {
-      const p = position(u);
-      let target = lerp(from.target, to.target, u);
-      // Never let the look target collapse onto the camera (lookAt would flip).
-      if (length(sub(target, p)) < 2) target = add(p, scale(normalize(sub(to.target, p)), 10));
-      return { position: p, target, fov: lerpNumber(from.fov, to.fov, u) };
+      const k = Math.min(Math.max(u, 0), 1);
+      if (k === 0) return { position: from.position, target: from.target, fov: from.fov };
+      if (k === 1) return { position: end, target: to.target, fov: to.fov };
+      const p = position(k);
+      const look = { yaw: look0.yaw + dYaw * k, pitch: lerpNumber(look0.pitch, look1.pitch, k) };
+      const target = add(p, scale(directionOf(look), Math.max(10, lerpNumber(dist0, dist1, k))));
+      return { position: p, target, fov: lerpNumber(from.fov, to.fov, k) };
     },
   };
 }
