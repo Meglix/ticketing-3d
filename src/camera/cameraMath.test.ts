@@ -19,6 +19,8 @@ import {
   SEAT_LOOK_LIMITS,
   seatFov,
   seatPose,
+  SEAT_TILT_FROM_FOV,
+  toDeg,
   sub,
   vec,
   wrapAngle,
@@ -166,5 +168,18 @@ describe('seat view', () => {
     const inside = clampLook(base, { yaw: base.yaw + 0.2, pitch: -0.2 });
     expect(inside.yaw).toBeCloseTo(base.yaw + 0.2, 12);
     expect(scale(directionOf(inside), 1).y).toBeLessThan(0);
+  });
+});
+
+describe('seat view on tall screens', () => {
+  it('tilts the initial look down on a portrait phone but not on a laptop', () => {
+    const seat = vec(0, 15, -62);
+    const laptop = seatPose(seat, 1.2, 1440 / 900);
+    expect(laptop.target).toEqual(vec(0, 0, 0));
+    const phone = seatPose(seat, 1.2, 390 / 844);
+    const toCentre = anglesOf(phone.position, vec(0, 0, 0));
+    const look = anglesOf(phone.position, phone.target);
+    expect(look.yaw).toBeCloseTo(toCentre.yaw, 9);
+    expect(toDeg(toCentre.pitch - look.pitch)).toBeCloseTo((78 - SEAT_TILT_FROM_FOV) / 2, 6);
   });
 });

@@ -86,14 +86,17 @@ export const OVERVIEW_LIMITS = {
 export const isPortrait = (aspect: number): boolean => aspect < 1;
 
 /**
- * Default overview orbit. Landscape: camera behind Tribuna I (−z), so the
- * pitch's long axis runs left–right. Portrait (phones): camera behind
- * Peluza I (−x), so the long axis runs up–down and the stadium fills the screen.
+ * Default overview orbit. Landscape: camera behind Tribuna II (+z), looking at
+ * the main stand, so Tribuna I's premium inventory (VIP 1C/1D, press, the
+ * 100-lei sectors) faces the camera with both rings visible. Seen from behind
+ * Tribuna I, its own upper-ring overhang hid the lower ring. The pitch's long
+ * axis runs left–right. Portrait (phones): camera behind Peluza I (−x), so the
+ * long axis runs up–down and the stadium fills the screen.
  */
 export function defaultOverviewOrbit(aspect: number): OverviewOrbit {
   return isPortrait(aspect)
     ? { azimuth: Math.PI, elevation: deg(60), zoom: 1 }
-    : { azimuth: -Math.PI / 2, elevation: deg(48), zoom: 1 };
+    : { azimuth: Math.PI / 2, elevation: deg(52), zoom: 1 };
 }
 
 /** Unit vector from the orbit target towards the camera. */
@@ -191,9 +194,25 @@ export function seatFov(aspect: number): number {
   return clamp(toDeg(vertical), 50, 78);
 }
 
-/** The camera pose when sitting on a seat: eye above the tread, looking at `focus` (the centre spot). */
+/** Above this vertical fov the initial seat view is tilted down (see seatPose). */
+export const SEAT_TILT_FROM_FOV = 60;
+
+/**
+ * The camera pose when sitting on a seat: eye above the tread, looking towards
+ * `focus` (the centre spot). From most seats that direction is close to the
+ * horizon, so on a tall portrait view (fov 78°) centring on it would fill the
+ * top of the screen with sky. There the initial look is tilted down by half
+ * the extra fov, so the far stand sits near the top edge as it would on a
+ * laptop. The yaw (and so the look-around limits) still centre on `focus`.
+ */
 export function seatPose(seatPosition: Vec3, eyeHeight: number, aspect: number, focus: Vec3 = vec(0, 0, 0)): CameraPose {
-  return { position: add(seatPosition, vec(0, eyeHeight, 0)), target: focus, fov: seatFov(aspect) };
+  const eye = add(seatPosition, vec(0, eyeHeight, 0));
+  const fov = seatFov(aspect);
+  const tilt = deg(Math.max(0, fov - SEAT_TILT_FROM_FOV) / 2);
+  if (tilt === 0) return { position: eye, target: focus, fov };
+  const base = anglesOf(eye, focus);
+  const look = { yaw: base.yaw, pitch: Math.max(SEAT_LOOK_LIMITS.minPitch, base.pitch - tilt) };
+  return { position: eye, target: add(eye, scale(directionOf(look), length(sub(focus, eye)))), fov };
 }
 
 export function anglesOf(from: Vec3, to: Vec3): LookAngles {

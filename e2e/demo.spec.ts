@@ -1,5 +1,8 @@
 import { expect, test } from '@playwright/test';
+import { strings } from '../src/ui/strings.ts';
 import { settle, tapSector, trackErrors, waitForOverview, waitForSeat } from './helpers.ts';
+
+const SEAT_PANEL = strings.panelLabel;
 
 /** One sector per stand (plus both rings across the set). */
 const SECTORS = [
@@ -41,7 +44,10 @@ for (const vp of VIEWPORTS) {
         await tapSector(page, code, vp.touch);
         await waitForSeat(page, code);
         await settle(page);
-        await expect(page.getByText(code, { exact: false }).first()).toBeVisible();
+        // The seat panel (a labelled region) shows the selected sector code.
+        const panel = page.getByRole('region', { name: SEAT_PANEL });
+        await expect(panel).toBeVisible();
+        await expect(panel.getByText(code, { exact: true })).toBeVisible();
         await page.screenshot({ path: `screenshots/${vp.name}-seat-${stand}-${code}.png` });
       }
 

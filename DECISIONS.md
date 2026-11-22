@@ -152,3 +152,28 @@ Each entry: **decision** — alternatives — why. Newest at the bottom.
     draw calls / triangles).** Why: headless CI renders with SwiftShader (CPU),
     so its FPS is only a floor. The meter lets the owner measure on the actual
     demo laptop and phone.
+
+## Integration
+
+24. **Default desktop overview from behind Tribuna II (azimuth +z, 52°), not
+    Tribuna I (lane C's first choice, 48°).** Why: the first integrated
+    screenshot showed that, seen from behind Tribuna I, its own upper-ring
+    overhang hid the lower ring, which holds the VIP sectors 1C/1D. In a sales
+    demo the premium inventory must be the most visible thing. The hidden
+    lower ring is now Tribuna II's (20–25 lei); orbiting reveals it. Phones
+    keep the view from behind Peluza I.
+
+25. **Portrait seat view: the initial look is tilted down by half of
+    (fov − 60°).** Alternatives: a narrower fov on phones (less context);
+    leave it centred (≈ 40 % of the screen was sky). Why: the far stand now sits
+    near the top edge as on a laptop. Yaw limits still centre on the pitch centre.
+
+26. **Desktop legend = one slim price bar at the bottom, stacked under the
+    hint.** Alternative: lane D's top-right card. Why: the card covered the
+    stadium's right-hand sectors and labels, and positioning the hint and legend
+    independently let them collide on narrower laptops (seen at 1024 px).
+
+27. **e2e rapid-tap test re-projects each sector at tap time.** Why: the first
+    version resolved all tap points before the first tap. Once the camera
+    moves, a stale point lands on a neighbouring sector (2M1) and the app
+    correctly flies there, so the test was wrong, not the app.

@@ -921,26 +921,70 @@ button {
     display: inline;
   }
 
+  /* Hint above a slim legend bar, stacked so they can never overlap however the legend wraps. */
   .ui-bottom {
-    display: contents;
+    left: 50%;
+    right: auto;
+    bottom: 18px;
+    width: max-content;
+    max-width: calc(100% - 36px);
+    transform: translateX(-50%);
+    align-items: center;
   }
 
+  /* Desktop: the legend is a slim price scale along the bottom edge, under the
+     stadium, so it never covers sectors at the sides of the overview. */
   .ui-legend {
-    position: absolute;
-    top: 18px;
-    right: 18px;
-    width: 230px;
+    width: auto;
+    max-width: 100%;
+  }
+
+  .ui-legend.is-open {
+    display: flex;
+    align-items: center;
+  }
+
+  .ui-legend.is-open .ui-legend__toggle {
+    width: auto;
+    flex: none;
+    gap: 8px;
+    padding-right: 4px;
+  }
+
+  .ui-legend.is-open .ui-legend__chevron {
+    margin-left: 0;
+  }
+
+  .ui-legend.is-open .ui-legend__body {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 6px 16px 6px 4px;
   }
 
   .ui-legend__list {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+  }
+
+  .ui-legend__item {
+    white-space: nowrap;
+  }
+
+  /* The bar's title already says "Prețuri demo"; the note only fits the phone card. */
+  .ui-legend__note {
+    display: none;
+  }
+
+  /* Wide screens: one row; narrower laptops/tablets wrap. */
+  @media (min-width: 1280px) {
+    .ui-legend__list {
+      flex-wrap: nowrap;
+    }
   }
 
   .ui-hint {
-    position: absolute;
-    left: 50%;
-    bottom: 26px;
-    transform: translateX(-50%);
     white-space: nowrap;
   }
 

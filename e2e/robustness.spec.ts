@@ -3,25 +3,30 @@ import { type DemoSeam, demoState, settle, tapSector, trackErrors, waitForOvervi
 
 test.use({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
 
-test('rapid taps on different sectors end on the last one, without errors', async ({ page }) => {
+test('rapid taps on different sectors (within ~300 ms) end on the last one tapped, without errors', async ({ page }) => {
   const errors = trackErrors(page);
   await page.goto('/');
   await waitForOverview(page);
-  // Resolve all tap points first (they move once the camera starts flying).
-  const points = await page.evaluate(() =>
-    ['2C', '2M2', '1H'].map((c) => (window as unknown as { __clujDemo: DemoSeam }).__clujDemo.sectorScreenPoint(c)),
-  );
-  for (const p of points) {
-    expect(p).not.toBeNull();
-    await page.mouse.click(p!.x, p!.y);
+  // Each tap targets the sector where it is on screen *now* (the camera is
+  // already flying after the first tap), like a user chasing a moving view.
+  const tapped: string[] = [];
+  for (const code of ['2C', '2M2', '1H']) {
+    const p = await page.evaluate(
+      (c) => (window as unknown as { __clujDemo: DemoSeam }).__clujDemo.sectorScreenPoint(c),
+      code,
+    );
+    if (!p) continue; // not visible from the moving camera at this instant
+    await page.mouse.click(p.x, p.y);
+    tapped.push(code);
     await page.waitForTimeout(80);
   }
-  await page.waitForFunction(() => !(window as unknown as { __clujDemo: DemoSeam }).__clujDemo.state().inTransit, null, { timeout: 60_000 });
+  expect(tapped.length).toBeGreaterThanOrEqual(2);
+  await page.waitForFunction(() => !(window as unknown as { __clujDemo: DemoSeam }).__clujDemo.state().inTransit, null, {
+    timeout: 60_000,
+  });
   const s = await demoState(page);
   expect(s.view).toBe('seat');
-  // The last tap may land on whatever is under that pixel mid-flight; it must
-  // be one of the tapped sectors and the state must be consistent.
-  expect(['2C', '2M2', '1H']).toContain(s.selectedSector);
+  expect(s.selectedSector).toBe(tapped[tapped.length - 1]);
   expect(s.seatId?.startsWith(`${s.selectedSector}-`)).toBe(true);
   expect(errors).toEqual([]);
 });

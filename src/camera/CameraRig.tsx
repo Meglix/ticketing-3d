@@ -317,9 +317,11 @@ export function CameraRig({ venue }: { venue: Venue }) {
           r.flight = null;
           if (r.flightGoal === 'seat') {
             r.mode = 'seat';
+            // Limits centre on the pitch centre; the initial look is the flight's
+            // final target (tilted down on portrait screens, see seatPose).
             r.lookBase = anglesOf(pose.position, ORIGIN);
-            r.look = r.lookBase;
-            r.lookDistance = length(sub(ORIGIN, pose.position));
+            r.look = clampLook(r.lookBase, anglesOf(pose.position, pose.target));
+            r.lookDistance = length(sub(pose.target, pose.position));
           } else {
             r.mode = 'overview';
           }

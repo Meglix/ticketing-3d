@@ -138,9 +138,10 @@ describe('flight envelope', () => {
 
 describe('flights never pass through the roof or the stands', () => {
   it('(control) the collision check does catch a naive straight-line flight', () => {
-    // Overview behind Tribuna I straight down to a lower-ring seat in Tribuna I: crosses the roof.
+    // Laptop overview sits behind Tribuna II; a straight line down to a lower-ring
+    // seat in Tribuna II (under its own roof and upper ring) must be caught.
     const overview = overviewPose(outline, 1.6, defaultOverviewOrbit(1.6));
-    const t1Lower = manifest.sectors.find((s) => s.code === '1B')!;
+    const t1Lower = manifest.sectors.find((s) => s.code === '1L')!;
     const seat = seatPoseOf(t1Lower.representativeSeat, 1.6);
     let hit: string | null = null;
     for (let i = 0; i <= 400 && !hit; i++) {
