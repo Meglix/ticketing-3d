@@ -82,3 +82,55 @@ Each entry: **decision** — alternatives — why. Newest at the bottom.
     (bloom, SMAA, AO). Why: it is an extra dependency, the target is ~60 fps on a
     mid-range laptop and phones, and MSAA plus ACES tone mapping are enough for a
     clean stylised look.
+
+## Build & tooling
+
+13. **vitest 4.1.12 installed with `legacy-peer-deps=true` (in `.npmrc`).**
+    Alternatives: vitest 3.2 (installs cleanly but `npm audit` reports critical
+    advisories in its `tinypool`/`@vitest/mocker`); vitest 5 (new major).
+    Why: 4.1.12 is the first patched 4.x, but npm 10 crashes
+    (`Cannot read properties of null (reading 'edgesOut')`) while resolving its
+    optional peer set. Every peer we need (react, three, vite) is a direct
+    dependency, so skipping automatic peer installation is safe. The `.npmrc`
+    makes Vercel's `npm install` behave the same. Result: 0 vulnerabilities.
+
+14. **The authoring script runs on Node's built-in TypeScript type stripping
+    (`node scripts/author-cluj-arena.ts`).** Alternatives: `tsx`/`ts-node`
+    (extra dependency); a JS copy of the geometry (two sources of truth). Why:
+    Node ≥ 22.18 runs erasable TypeScript directly. This forces explicit `.ts`
+    import extensions and `import type`, which `tsconfig` enforces with
+    `allowImportingTsExtensions`, `verbatimModuleSyntax` and `erasableSyntaxOnly`.
+
+## Venue data
+
+15. **Lane A ran before lanes B/C/D instead of in parallel with them.**
+    Alternatives: all four lanes at once against stub data. Why: the scene,
+    camera and picking all consume the generator's real output (sector solids,
+    seat positions, bounds). Building against stubs would mean re-integrating
+    later. B, C and D then run in parallel.
+
+16. **Wheelchair spaces = a separate pitch-level "ring 0" in front of Tribuna II
+    (sector `PD`, 32 spaces of 0.9 m).** Alternatives: a platform behind the
+    lower ring (the lower ring's back wall and the upper ring's overhang would
+    block it); flags on ordinary seats (an extra per-seat concept). Why: it is a
+    plain sector in the existing model, it has excellent sightlines, and it is
+    visible in the overview. Location ESTIMATED.
+
+17. **Press = narrow sector `2P` at the centre of Tribuna I's upper ring,
+    `price: null` ("not for sale").** Alternatives: the press as the front rows
+    of 2C/2D (sectors would then not be wedges). Why: keeps every sector a
+    simple span. The UI can show the view but not sell it.
+
+18. **Span overlap tolerance 1 mm.** Why: spans are stored with mm precision
+    and wrap around the perimeter (Tribuna I spans s = 0). Rounding left a
+    0.4 mm "overlap" between 1A1 and 1Y. The validator caught it, and it is noise.
+
+19. **Upper ring risers 0.47 → 0.54 m (30.4° → 34°).** Alternative: 0.45 →
+    0.55 m (first estimate). Why: the first estimate met the required
+    pitch-centre sightline but gave a near-touchline C-value of 57 mm, below
+    the 60 mm design minimum. The new profile gives ≥ 77 mm everywhere and keeps
+    the maximum rake at the usual 34° limit. The tests now enforce both focus points.
+
+20. **Representative seat = middle seat of the middle row; label anchor 2 m
+    above the middle row at the middle of the span.** Why: simple,
+    deterministic, and always on the visible tread.

@@ -93,10 +93,11 @@ export interface ScreenPlacement {
 }
 
 export interface StructureData {
-  /** Stepped tread/riser surface of each sector, keyed by sector code. Also the tap target. */
+  /**
+   * Closed solid of each sector (parapet, stepped treads/risers, back wall,
+   * underside, end caps), keyed by sector code. Also the tap target.
+   */
   sectorSurfaces: Record<string, MeshData>;
-  /** Front walls / parapets, soffits, back walls and side caps of all rings. */
-  shells: MeshData;
   roof: {
     /** Opaque (aluminium) part of the roof skin. */
     opaque: MeshData;

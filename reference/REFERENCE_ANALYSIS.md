@@ -61,7 +61,7 @@ positions), (b) the roof's 23 m cantilever covers ~93 % of the seats (excerpt:
 | Rows | 14 | low |
 | Row depth | 0.80 m (UEFA/Green Guide typical minimum) | medium |
 | First row | 1.0 m behind the front wall, tread 1.6 m above the track (eye 2.8 m) | low |
-| Rake | risers 0.30 → 0.40 m (≈ 21° → 27°), the usual convex profile | low |
+| Rake | risers 0.30 → 0.40 m (≈ 20.6° → 26.6°), the usual convex profile; last row 6.15 m | low |
 | Front wall | 1.1 m above the first-row tread | low |
 | Accessible platform | Tribuna II centre, behind the last row, 32 wheelchair spaces | low (count is sourced, location is not) |
 | VIP / business | Tribuna I centre, sectors 1C and 1D, wider seats (0.55 m) — 1,464 seats in total | medium (count sourced, "VIP in Tribuna I" sourced, exact place estimated) |
@@ -72,8 +72,8 @@ positions), (b) the roof's 23 m cantilever covers ~93 % of the seats (excerpt:
 |---|---|---|
 | Rows | 16 | low |
 | Row depth | 0.80 m | medium |
-| First row | 10.0 m behind the reference line, tread 11.5 m high: it overhangs the back of the lower ring (VIP boxes / concourse level sits underneath) | low |
-| Rake | risers 0.45 → 0.55 m (≈ 29° → 35°) | low |
+| First row | 10.0 m behind the reference line, tread 11.5 m high, last row 19.1 m. The front fascia (9.4 m) overhangs the lower ring's back wall (12.1 m) by ≈ 2.7 m; VIP boxes / concourse sit underneath | low |
+| Rake | risers 0.47 → 0.54 m (≈ 30.4° → 34°; 34° is the usual maximum). Tuned so the near-touchline C-value is ≥ 60 mm (it was 57 mm with 0.45 m front risers) | low |
 | Front parapet | 0.8 m above the first-row tread (typical value for a balustrade in front of seated rows) | low |
 | Press | narrow sector 2P at the centre of Tribuna I, 168 seats | medium (count sourced, place = the usual press position at the centre of the main stand) |
 
@@ -110,3 +110,15 @@ positions), (b) the roof's 23 m cantilever covers ~93 % of the seats (excerpt:
 4. Height of the upper ring's first row and the overhang depth (shapes the view
    from the back rows of the lower ring).
 5. Roof leading-edge position (which rows are uncovered) and screen positions.
+
+## 5. Calibration results (from `npm run author:cluj` and the test suite)
+
+| Quantity | Result |
+|---|---|
+| Seats generated | 30,335 (= capacity), 58 sectors |
+| Standard seats | 28,671 of 29,892 geometric maximum (95.9 % fill; the rest = vomitories, stairs, wider aisles) |
+| VIP / press / wheelchair | 1,464 / 168 / 32 (96.8 % / 95.5 % / 94.1 % of what fits) |
+| Per stand (ring 1 + ring 2) | Tribuna I 4,430 + 5,390 · Tribuna II 4,478 + 5,350 (+32 platform) · Peluza II 2,380 + 2,966 · Peluza I 2,379 + 2,930 |
+| Min C-value to the pitch centre | ≥ 60 mm for every seat (test-enforced) |
+| Min C-value to the nearest touchline | 77 mm (upper ring, Tribuna I front rows); ≥ 60 mm everywhere (test-enforced) |
+| Roof vs. top spectator | roof fascia ≥ 3 m above the highest eye (test-enforced) |

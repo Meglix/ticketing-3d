@@ -103,7 +103,8 @@ short excerpts of pages**. So:
 |---|---|---|
 | Bowl inner edge: rounded rectangle 184 × 100 m, corner radius 30 m | ESTIMATED | must enclose the 8-lane track with ≥ 2.5 m clearance; corners rounded ("bowl") |
 | Lower ring: 14 rows, 0.80 m treads, rake 21°→27°, first row 1.6 m above the track | ESTIMATED | capacity budget + standard tread depth + sightline C-value ≥ 60 mm |
-| Upper ring: 16 rows, 0.80 m treads, rake 29°→35°, first row 11.5 m up, 1.4 m overhang over the lower ring | ESTIMATED | capacity budget; roof cantilever (23 m) must cover ~93 % of seats |
+| Wheelchair platform (32 spaces) at pitch level in front of Tribuna II | ESTIMATED | count sourced; position chosen (common in bowls with a track) |
+| Upper ring: 16 rows, 0.80 m treads, rake 30°→34°, first row 11.5 m up, ≈ 2.7 m overhang over the lower ring | ESTIMATED | capacity budget; roof cantilever (23 m) must cover ~93 % of seats; touchline C-value ≥ 60 mm |
 | Seat width 0.50 m (VIP 0.55 m, wheelchair space 0.90 m) | ESTIMATED | UEFA/Green Guide typical values |
 | Roof: 4 separate cantilever frames, 5 m (reference-line) gaps at corner diagonals | ESTIMATED | "four frames" + "gaps" excerpts; exact gap width unknown |
 | Roof edge ~27 m high, ~23 m cantilever; inner 7 m band translucent | ESTIMATED | from frame dimensions and the polycarbonate area / perimeter ratio |
