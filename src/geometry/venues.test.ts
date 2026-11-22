@@ -1,30 +1,40 @@
 /**
- * The core guarantees of the generated Cluj Arena seat map:
+ * The core guarantees of every generated seat map (run for EVERY file in /venues):
  *  1. every seat in the config is generated, and the total matches the venue capacity;
  *  2. no two seats are closer than a seat width;
- *  3. every seat has an unobstructed sightline to the pitch centre.
- * These run on the real venues/cluj-arena.json, so a bad edit to the data fails CI.
+ *  3. every seat has an unobstructed sightline to the pitch centre (and the nearest touchline).
+ * They run on the real JSON files, so a bad edit to the data fails CI.
  */
+import { readdirSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
-import raw from '../../venues/cluj-arena.json';
 import { loadVenue, type Venue } from '../venue/loadVenue.ts';
 import { signedDistance } from './roundedRect.ts';
 import { nearestTouchlinePoint, sightline, standObstacles } from './sightlines.ts';
 
+const venuesDir = fileURLToPath(new URL('../../venues/', import.meta.url));
+const venueFiles = readdirSync(venuesDir).filter((f) => f.endsWith('.json'));
+
+it('finds the shipped venues', () => {
+  expect(venueFiles).toContain('cluj-arena.json');
+  expect(venueFiles.length).toBeGreaterThanOrEqual(2);
+});
+
+describe.each(venueFiles)('%s', (file) => {
 let venue: Venue;
 beforeAll(() => {
-  venue = loadVenue(raw);
+  venue = loadVenue(JSON.parse(readFileSync(venuesDir + file, 'utf8')));
 });
 
 describe('seat count', () => {
-  it('generates exactly the capacity declared in the config (30,335)', () => {
+  it('generates exactly the capacity declared in the config', () => {
     const { config, manifest } = venue;
     const fromRows = config.stands
       .flatMap((s) => s.rings.flatMap((r) => r.sectors.flatMap((x) => x.rows)))
       .reduce((a, r) => a + r.seats, 0);
     expect(manifest.seats.length).toBe(fromRows);
     expect(manifest.seats.length).toBe(config.capacity.total);
-    expect(config.capacity.total).toBe(30335);
+    if (config.id === 'cluj-arena') expect(config.capacity.total).toBe(30335);
   });
 
   it('matches the VIP / press / accessible breakdown', () => {
@@ -154,4 +164,5 @@ describe('sightlines', () => {
     console.log('Lowest touchline C-values (mm):', rows.slice(0, 6).map((r) => `${r.code}=${r.minC_mm}`).join(', '));
     expect(rows[0]!.minC_mm).toBeGreaterThanOrEqual(venue.config.minCValue * 1000);
   });
+});
 });

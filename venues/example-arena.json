@@ -1,0 +1,566 @@
+{
+  "id": "example-arena",
+  "name": "Arena Exemplu",
+  "city": "Oraș demo",
+  "capacity": {
+    "total": 17784,
+    "vip": 1144,
+    "press": 0,
+    "accessible": 0
+  },
+  "eyeHeight": 1.2,
+  "seatWidth": 0.5,
+  "aisleWidth": 1.2,
+  "minCValue": 0.06,
+  "priceTiers": [
+    { "id": "a", "label": "30 lei", "price": 30, "color": "#3a9ad9" },
+    { "id": "b", "label": "50 lei", "price": 50, "color": "#b45bc9" },
+    { "id": "c", "label": "80 lei", "price": 80, "color": "#f08a3e" }
+  ],
+  "pitch": {
+    "length": 105,
+    "width": 68
+  },
+  "track": null,
+  "layout": {
+    "template": "bowl",
+    "referenceLine": {
+      "halfLength": 60.5,
+      "halfWidth": 42,
+      "cornerRadius": 14
+    }
+  },
+  "stands": [
+    {
+      "id": "V",
+      "name": "Tribuna Vest",
+      "rings": [
+        {
+          "ring": 1,
+          "name": "Inel unic",
+          "parapetHeight": 1,
+          "slabThickness": null,
+          "backWallHeight": 2,
+          "sectors": [
+            {
+              "code": "VA",
+              "name": "Sector VA",
+              "tier": "b",
+              "category": "standard",
+              "estimated": false,
+              "span": { "from": -57.496, "to": -28.748 },
+              "rows": [
+                { "row": 1, "distance": 1, "elevation": 1.2, "rakeDeg": 25.4, "seats": 53 },
+                { "row": 2, "distance": 1.8, "elevation": 1.58, "rakeDeg": 25.6, "seats": 54 },
+                { "row": 3, "distance": 2.6, "elevation": 1.964, "rakeDeg": 25.9, "seats": 56 },
+                { "row": 4, "distance": 3.4, "elevation": 2.352, "rakeDeg": 26.1, "seats": 57 },
+                { "row": 5, "distance": 4.2, "elevation": 2.744, "rakeDeg": 26.3, "seats": 58 },
+                { "row": 6, "distance": 5, "elevation": 3.14, "rakeDeg": 26.6, "seats": 59 },
+                { "row": 7, "distance": 5.8, "elevation": 3.54, "rakeDeg": 26.8, "seats": 61 },
+                { "row": 8, "distance": 6.6, "elevation": 3.944, "rakeDeg": 27, "seats": 62 },
+                { "row": 9, "distance": 7.4, "elevation": 4.352, "rakeDeg": 27.2, "seats": 63 },
+                { "row": 10, "distance": 8.2, "elevation": 4.764, "rakeDeg": 27.5, "seats": 64 },
+                { "row": 11, "distance": 9, "elevation": 5.18, "rakeDeg": 27.7, "seats": 66 },
+                { "row": 12, "distance": 9.8, "elevation": 5.6, "rakeDeg": 27.9, "seats": 67 },
+                { "row": 13, "distance": 10.6, "elevation": 6.024, "rakeDeg": 28.1, "seats": 68 },
+                { "row": 14, "distance": 11.4, "elevation": 6.452, "rakeDeg": 28.4, "seats": 69 },
+                { "row": 15, "distance": 12.2, "elevation": 6.884, "rakeDeg": 28.6, "seats": 70 },
+                { "row": 16, "distance": 13, "elevation": 7.32, "rakeDeg": 28.8, "seats": 71 },
+                { "row": 17, "distance": 13.8, "elevation": 7.76, "rakeDeg": 29, "seats": 72 },
+                { "row": 18, "distance": 14.6, "elevation": 8.204, "rakeDeg": 29.2, "seats": 74 },
+                { "row": 19, "distance": 15.4, "elevation": 8.652, "rakeDeg": 29.5, "seats": 75 },
+                { "row": 20, "distance": 16.2, "elevation": 9.104, "rakeDeg": 29.7, "seats": 76 },
+                { "row": 21, "distance": 17, "elevation": 9.56, "rakeDeg": 29.9, "seats": 77 },
+                { "row": 22, "distance": 17.8, "elevation": 10.02, "rakeDeg": 29.9, "seats": 79 }
+              ]
+            },
+            {
+              "code": "VB",
+              "name": "Sector VB",
+              "tier": "c",
+              "category": "standard",
+              "estimated": false,
+              "span": { "from": -28.748, "to": 0 },
+              "rows": [
+                { "row": 1, "distance": 1, "elevation": 1.2, "rakeDeg": 25.4, "seats": 52 },
+                { "row": 2, "distance": 1.8, "elevation": 1.58, "rakeDeg": 25.6, "seats": 52 },
+                { "row": 3, "distance": 2.6, "elevation": 1.964, "rakeDeg": 25.9, "seats": 52 },
+                { "row": 4, "distance": 3.4, "elevation": 2.352, "rakeDeg": 26.1, "seats": 52 },
+                { "row": 5, "distance": 4.2, "elevation": 2.744, "rakeDeg": 26.3, "seats": 52 },
+                { "row": 6, "distance": 5, "elevation": 3.14, "rakeDeg": 26.6, "seats": 52 },
+                { "row": 7, "distance": 5.8, "elevation": 3.54, "rakeDeg": 26.8, "seats": 52 },
+                { "row": 8, "distance": 6.6, "elevation": 3.944, "rakeDeg": 27, "seats": 52 },
+                { "row": 9, "distance": 7.4, "elevation": 4.352, "rakeDeg": 27.2, "seats": 52 },
+                { "row": 10, "distance": 8.2, "elevation": 4.764, "rakeDeg": 27.5, "seats": 52 },
+                { "row": 11, "distance": 9, "elevation": 5.18, "rakeDeg": 27.7, "seats": 52 },
+                { "row": 12, "distance": 9.8, "elevation": 5.6, "rakeDeg": 27.9, "seats": 52 },
+                { "row": 13, "distance": 10.6, "elevation": 6.024, "rakeDeg": 28.1, "seats": 52 },
+                { "row": 14, "distance": 11.4, "elevation": 6.452, "rakeDeg": 28.4, "seats": 52 },
+                { "row": 15, "distance": 12.2, "elevation": 6.884, "rakeDeg": 28.6, "seats": 52 },
+                { "row": 16, "distance": 13, "elevation": 7.32, "rakeDeg": 28.8, "seats": 52 },
+                { "row": 17, "distance": 13.8, "elevation": 7.76, "rakeDeg": 29, "seats": 52 },
+                { "row": 18, "distance": 14.6, "elevation": 8.204, "rakeDeg": 29.2, "seats": 52 },
+                { "row": 19, "distance": 15.4, "elevation": 8.652, "rakeDeg": 29.5, "seats": 52 },
+                { "row": 20, "distance": 16.2, "elevation": 9.104, "rakeDeg": 29.7, "seats": 52 },
+                { "row": 21, "distance": 17, "elevation": 9.56, "rakeDeg": 29.9, "seats": 52 },
+                { "row": 22, "distance": 17.8, "elevation": 10.02, "rakeDeg": 29.9, "seats": 52 }
+              ]
+            },
+            {
+              "code": "VC",
+              "name": "VIP · VC",
+              "tier": "c",
+              "category": "vip",
+              "estimated": false,
+              "span": { "from": 0, "to": 28.748 },
+              "rows": [
+                { "row": 1, "distance": 1, "elevation": 1.2, "rakeDeg": 25.4, "seats": 52 },
+                { "row": 2, "distance": 1.8, "elevation": 1.58, "rakeDeg": 25.6, "seats": 52 },
+                { "row": 3, "distance": 2.6, "elevation": 1.964, "rakeDeg": 25.9, "seats": 52 },
+                { "row": 4, "distance": 3.4, "elevation": 2.352, "rakeDeg": 26.1, "seats": 52 },
+                { "row": 5, "distance": 4.2, "elevation": 2.744, "rakeDeg": 26.3, "seats": 52 },
+                { "row": 6, "distance": 5, "elevation": 3.14, "rakeDeg": 26.6, "seats": 52 },
+                { "row": 7, "distance": 5.8, "elevation": 3.54, "rakeDeg": 26.8, "seats": 52 },
+                { "row": 8, "distance": 6.6, "elevation": 3.944, "rakeDeg": 27, "seats": 52 },
+                { "row": 9, "distance": 7.4, "elevation": 4.352, "rakeDeg": 27.2, "seats": 52 },
+                { "row": 10, "distance": 8.2, "elevation": 4.764, "rakeDeg": 27.5, "seats": 52 },
+                { "row": 11, "distance": 9, "elevation": 5.18, "rakeDeg": 27.7, "seats": 52 },
+                { "row": 12, "distance": 9.8, "elevation": 5.6, "rakeDeg": 27.9, "seats": 52 },
+                { "row": 13, "distance": 10.6, "elevation": 6.024, "rakeDeg": 28.1, "seats": 52 },
+                { "row": 14, "distance": 11.4, "elevation": 6.452, "rakeDeg": 28.4, "seats": 52 },
+                { "row": 15, "distance": 12.2, "elevation": 6.884, "rakeDeg": 28.6, "seats": 52 },
+                { "row": 16, "distance": 13, "elevation": 7.32, "rakeDeg": 28.8, "seats": 52 },
+                { "row": 17, "distance": 13.8, "elevation": 7.76, "rakeDeg": 29, "seats": 52 },
+                { "row": 18, "distance": 14.6, "elevation": 8.204, "rakeDeg": 29.2, "seats": 52 },
+                { "row": 19, "distance": 15.4, "elevation": 8.652, "rakeDeg": 29.5, "seats": 52 },
+                { "row": 20, "distance": 16.2, "elevation": 9.104, "rakeDeg": 29.7, "seats": 52 },
+                { "row": 21, "distance": 17, "elevation": 9.56, "rakeDeg": 29.9, "seats": 52 },
+                { "row": 22, "distance": 17.8, "elevation": 10.02, "rakeDeg": 29.9, "seats": 52 }
+              ]
+            },
+            {
+              "code": "VD",
+              "name": "Sector VD",
+              "tier": "b",
+              "category": "standard",
+              "estimated": false,
+              "span": { "from": 28.748, "to": 57.496 },
+              "rows": [
+                { "row": 1, "distance": 1, "elevation": 1.2, "rakeDeg": 25.4, "seats": 53 },
+                { "row": 2, "distance": 1.8, "elevation": 1.58, "rakeDeg": 25.6, "seats": 54 },
+                { "row": 3, "distance": 2.6, "elevation": 1.964, "rakeDeg": 25.9, "seats": 56 },
+                { "row": 4, "distance": 3.4, "elevation": 2.352, "rakeDeg": 26.1, "seats": 57 },
+                { "row": 5, "distance": 4.2, "elevation": 2.744, "rakeDeg": 26.3, "seats": 58 },
+                { "row": 6, "distance": 5, "elevation": 3.14, "rakeDeg": 26.6, "seats": 59 },
+                { "row": 7, "distance": 5.8, "elevation": 3.54, "rakeDeg": 26.8, "seats": 61 },
+                { "row": 8, "distance": 6.6, "elevation": 3.944, "rakeDeg": 27, "seats": 62 },
+                { "row": 9, "distance": 7.4, "elevation": 4.352, "rakeDeg": 27.2, "seats": 63 },
+                { "row": 10, "distance": 8.2, "elevation": 4.764, "rakeDeg": 27.5, "seats": 64 },
+                { "row": 11, "distance": 9, "elevation": 5.18, "rakeDeg": 27.7, "seats": 66 },
+                { "row": 12, "distance": 9.8, "elevation": 5.6, "rakeDeg": 27.9, "seats": 67 },
+                { "row": 13, "distance": 10.6, "elevation": 6.024, "rakeDeg": 28.1, "seats": 68 },
+                { "row": 14, "distance": 11.4, "elevation": 6.452, "rakeDeg": 28.4, "seats": 69 },
+                { "row": 15, "distance": 12.2, "elevation": 6.884, "rakeDeg": 28.6, "seats": 70 },
+                { "row": 16, "distance": 13, "elevation": 7.32, "rakeDeg": 28.8, "seats": 71 },
+                { "row": 17, "distance": 13.8, "elevation": 7.76, "rakeDeg": 29, "seats": 72 },
+                { "row": 18, "distance": 14.6, "elevation": 8.204, "rakeDeg": 29.2, "seats": 74 },
+                { "row": 19, "distance": 15.4, "elevation": 8.652, "rakeDeg": 29.5, "seats": 75 },
+                { "row": 20, "distance": 16.2, "elevation": 9.104, "rakeDeg": 29.7, "seats": 76 },
+                { "row": 21, "distance": 17, "elevation": 9.56, "rakeDeg": 29.9, "seats": 77 },
+                { "row": 22, "distance": 17.8, "elevation": 10.02, "rakeDeg": 29.9, "seats": 79 }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "N",
+      "name": "Peluza Nord",
+      "rings": [
+        {
+          "ring": 1,
+          "name": "Inel unic",
+          "parapetHeight": 1,
+          "slabThickness": null,
+          "backWallHeight": 2,
+          "sectors": [
+            {
+              "code": "NA",
+              "name": "Sector NA",
+              "tier": "a",
+              "category": "standard",
+              "estimated": false,
+              "span": { "from": 57.496, "to": 83.493 },
+              "rows": [
+                { "row": 1, "distance": 1, "elevation": 1.2, "rakeDeg": 25.4, "seats": 48 },
+                { "row": 2, "distance": 1.8, "elevation": 1.58, "rakeDeg": 25.6, "seats": 49 },
+                { "row": 3, "distance": 2.6, "elevation": 1.964, "rakeDeg": 25.9, "seats": 50 },
+                { "row": 4, "distance": 3.4, "elevation": 2.352, "rakeDeg": 26.1, "seats": 51 },
+                { "row": 5, "distance": 4.2, "elevation": 2.744, "rakeDeg": 26.3, "seats": 53 },
+                { "row": 6, "distance": 5, "elevation": 3.14, "rakeDeg": 26.6, "seats": 54 },
+                { "row": 7, "distance": 5.8, "elevation": 3.54, "rakeDeg": 26.8, "seats": 55 },
+                { "row": 8, "distance": 6.6, "elevation": 3.944, "rakeDeg": 27, "seats": 56 },
+                { "row": 9, "distance": 7.4, "elevation": 4.352, "rakeDeg": 27.2, "seats": 58 },
+                { "row": 10, "distance": 8.2, "elevation": 4.764, "rakeDeg": 27.5, "seats": 59 },
+                { "row": 11, "distance": 9, "elevation": 5.18, "rakeDeg": 27.7, "seats": 60 },
+                { "row": 12, "distance": 9.8, "elevation": 5.6, "rakeDeg": 27.9, "seats": 61 },
+                { "row": 13, "distance": 10.6, "elevation": 6.024, "rakeDeg": 28.1, "seats": 63 },
+                { "row": 14, "distance": 11.4, "elevation": 6.452, "rakeDeg": 28.4, "seats": 64 },
+                { "row": 15, "distance": 12.2, "elevation": 6.884, "rakeDeg": 28.6, "seats": 65 },
+                { "row": 16, "distance": 13, "elevation": 7.32, "rakeDeg": 28.8, "seats": 67 },
+                { "row": 17, "distance": 13.8, "elevation": 7.76, "rakeDeg": 29, "seats": 68 },
+                { "row": 18, "distance": 14.6, "elevation": 8.204, "rakeDeg": 29.2, "seats": 68 },
+                { "row": 19, "distance": 15.4, "elevation": 8.652, "rakeDeg": 29.5, "seats": 69 },
+                { "row": 20, "distance": 16.2, "elevation": 9.104, "rakeDeg": 29.7, "seats": 71 },
+                { "row": 21, "distance": 17, "elevation": 9.56, "rakeDeg": 29.9, "seats": 72 },
+                { "row": 22, "distance": 17.8, "elevation": 10.02, "rakeDeg": 29.9, "seats": 73 }
+              ]
+            },
+            {
+              "code": "NB",
+              "name": "Sector NB",
+              "tier": "a",
+              "category": "standard",
+              "estimated": false,
+              "span": { "from": 83.493, "to": 109.49 },
+              "rows": [
+                { "row": 1, "distance": 1, "elevation": 1.2, "rakeDeg": 25.4, "seats": 47 },
+                { "row": 2, "distance": 1.8, "elevation": 1.58, "rakeDeg": 25.6, "seats": 47 },
+                { "row": 3, "distance": 2.6, "elevation": 1.964, "rakeDeg": 25.9, "seats": 47 },
+                { "row": 4, "distance": 3.4, "elevation": 2.352, "rakeDeg": 26.1, "seats": 47 },
+                { "row": 5, "distance": 4.2, "elevation": 2.744, "rakeDeg": 26.3, "seats": 47 },
+                { "row": 6, "distance": 5, "elevation": 3.14, "rakeDeg": 26.6, "seats": 47 },
+                { "row": 7, "distance": 5.8, "elevation": 3.54, "rakeDeg": 26.8, "seats": 47 },
+                { "row": 8, "distance": 6.6, "elevation": 3.944, "rakeDeg": 27, "seats": 47 },
+                { "row": 9, "distance": 7.4, "elevation": 4.352, "rakeDeg": 27.2, "seats": 47 },
+                { "row": 10, "distance": 8.2, "elevation": 4.764, "rakeDeg": 27.5, "seats": 47 },
+                { "row": 11, "distance": 9, "elevation": 5.18, "rakeDeg": 27.7, "seats": 47 },
+                { "row": 12, "distance": 9.8, "elevation": 5.6, "rakeDeg": 27.9, "seats": 47 },
+                { "row": 13, "distance": 10.6, "elevation": 6.024, "rakeDeg": 28.1, "seats": 47 },
+                { "row": 14, "distance": 11.4, "elevation": 6.452, "rakeDeg": 28.4, "seats": 47 },
+                { "row": 15, "distance": 12.2, "elevation": 6.884, "rakeDeg": 28.6, "seats": 47 },
+                { "row": 16, "distance": 13, "elevation": 7.32, "rakeDeg": 28.8, "seats": 47 },
+                { "row": 17, "distance": 13.8, "elevation": 7.76, "rakeDeg": 29, "seats": 47 },
+                { "row": 18, "distance": 14.6, "elevation": 8.204, "rakeDeg": 29.2, "seats": 47 },
+                { "row": 19, "distance": 15.4, "elevation": 8.652, "rakeDeg": 29.5, "seats": 47 },
+                { "row": 20, "distance": 16.2, "elevation": 9.104, "rakeDeg": 29.7, "seats": 47 },
+                { "row": 21, "distance": 17, "elevation": 9.56, "rakeDeg": 29.9, "seats": 47 },
+                { "row": 22, "distance": 17.8, "elevation": 10.02, "rakeDeg": 29.9, "seats": 47 }
+              ]
+            },
+            {
+              "code": "NC",
+              "name": "Sector NC",
+              "tier": "a",
+              "category": "standard",
+              "estimated": false,
+              "span": { "from": 109.49, "to": 135.487 },
+              "rows": [
+                { "row": 1, "distance": 1, "elevation": 1.2, "rakeDeg": 25.4, "seats": 48 },
+                { "row": 2, "distance": 1.8, "elevation": 1.58, "rakeDeg": 25.6, "seats": 49 },
+                { "row": 3, "distance": 2.6, "elevation": 1.964, "rakeDeg": 25.9, "seats": 50 },
+                { "row": 4, "distance": 3.4, "elevation": 2.352, "rakeDeg": 26.1, "seats": 51 },
+                { "row": 5, "distance": 4.2, "elevation": 2.744, "rakeDeg": 26.3, "seats": 53 },
+                { "row": 6, "distance": 5, "elevation": 3.14, "rakeDeg": 26.6, "seats": 54 },
+                { "row": 7, "distance": 5.8, "elevation": 3.54, "rakeDeg": 26.8, "seats": 55 },
+                { "row": 8, "distance": 6.6, "elevation": 3.944, "rakeDeg": 27, "seats": 56 },
+                { "row": 9, "distance": 7.4, "elevation": 4.352, "rakeDeg": 27.2, "seats": 58 },
+                { "row": 10, "distance": 8.2, "elevation": 4.764, "rakeDeg": 27.5, "seats": 59 },
+                { "row": 11, "distance": 9, "elevation": 5.18, "rakeDeg": 27.7, "seats": 60 },
+                { "row": 12, "distance": 9.8, "elevation": 5.6, "rakeDeg": 27.9, "seats": 61 },
+                { "row": 13, "distance": 10.6, "elevation": 6.024, "rakeDeg": 28.1, "seats": 63 },
+                { "row": 14, "distance": 11.4, "elevation": 6.452, "rakeDeg": 28.4, "seats": 64 },
+                { "row": 15, "distance": 12.2, "elevation": 6.884, "rakeDeg": 28.6, "seats": 65 },
+                { "row": 16, "distance": 13, "elevation": 7.32, "rakeDeg": 28.8, "seats": 67 },
+                { "row": 17, "distance": 13.8, "elevation": 7.76, "rakeDeg": 29, "seats": 68 },
+                { "row": 18, "distance": 14.6, "elevation": 8.204, "rakeDeg": 29.2, "seats": 68 },
+                { "row": 19, "distance": 15.4, "elevation": 8.652, "rakeDeg": 29.5, "seats": 69 },
+                { "row": 20, "distance": 16.2, "elevation": 9.104, "rakeDeg": 29.7, "seats": 71 },
+                { "row": 21, "distance": 17, "elevation": 9.56, "rakeDeg": 29.9, "seats": 72 },
+                { "row": 22, "distance": 17.8, "elevation": 10.02, "rakeDeg": 29.9, "seats": 73 }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Tribuna Est",
+      "rings": [
+        {
+          "ring": 1,
+          "name": "Inel unic",
+          "parapetHeight": 1,
+          "slabThickness": null,
+          "backWallHeight": 2,
+          "sectors": [
+            {
+              "code": "EA",
+              "name": "Sector EA",
+              "tier": "b",
+              "category": "standard",
+              "estimated": false,
+              "span": { "from": 135.487, "to": 164.235 },
+              "rows": [
+                { "row": 1, "distance": 1, "elevation": 1.2, "rakeDeg": 25.4, "seats": 53 },
+                { "row": 2, "distance": 1.8, "elevation": 1.58, "rakeDeg": 25.6, "seats": 54 },
+                { "row": 3, "distance": 2.6, "elevation": 1.964, "rakeDeg": 25.9, "seats": 56 },
+                { "row": 4, "distance": 3.4, "elevation": 2.352, "rakeDeg": 26.1, "seats": 57 },
+                { "row": 5, "distance": 4.2, "elevation": 2.744, "rakeDeg": 26.3, "seats": 58 },
+                { "row": 6, "distance": 5, "elevation": 3.14, "rakeDeg": 26.6, "seats": 59 },
+                { "row": 7, "distance": 5.8, "elevation": 3.54, "rakeDeg": 26.8, "seats": 61 },
+                { "row": 8, "distance": 6.6, "elevation": 3.944, "rakeDeg": 27, "seats": 62 },
+                { "row": 9, "distance": 7.4, "elevation": 4.352, "rakeDeg": 27.2, "seats": 63 },
+                { "row": 10, "distance": 8.2, "elevation": 4.764, "rakeDeg": 27.5, "seats": 64 },
+                { "row": 11, "distance": 9, "elevation": 5.18, "rakeDeg": 27.7, "seats": 66 },
+                { "row": 12, "distance": 9.8, "elevation": 5.6, "rakeDeg": 27.9, "seats": 67 },
+                { "row": 13, "distance": 10.6, "elevation": 6.024, "rakeDeg": 28.1, "seats": 68 },
+                { "row": 14, "distance": 11.4, "elevation": 6.452, "rakeDeg": 28.4, "seats": 69 },
+                { "row": 15, "distance": 12.2, "elevation": 6.884, "rakeDeg": 28.6, "seats": 70 },
+                { "row": 16, "distance": 13, "elevation": 7.32, "rakeDeg": 28.8, "seats": 71 },
+                { "row": 17, "distance": 13.8, "elevation": 7.76, "rakeDeg": 29, "seats": 72 },
+                { "row": 18, "distance": 14.6, "elevation": 8.204, "rakeDeg": 29.2, "seats": 74 },
+                { "row": 19, "distance": 15.4, "elevation": 8.652, "rakeDeg": 29.5, "seats": 75 },
+                { "row": 20, "distance": 16.2, "elevation": 9.104, "rakeDeg": 29.7, "seats": 76 },
+                { "row": 21, "distance": 17, "elevation": 9.56, "rakeDeg": 29.9, "seats": 77 },
+                { "row": 22, "distance": 17.8, "elevation": 10.02, "rakeDeg": 29.9, "seats": 79 }
+              ]
+            },
+            {
+              "code": "EB",
+              "name": "Sector EB",
+              "tier": "c",
+              "category": "standard",
+              "estimated": false,
+              "span": { "from": 164.235, "to": 192.982 },
+              "rows": [
+                { "row": 1, "distance": 1, "elevation": 1.2, "rakeDeg": 25.4, "seats": 52 },
+                { "row": 2, "distance": 1.8, "elevation": 1.58, "rakeDeg": 25.6, "seats": 52 },
+                { "row": 3, "distance": 2.6, "elevation": 1.964, "rakeDeg": 25.9, "seats": 52 },
+                { "row": 4, "distance": 3.4, "elevation": 2.352, "rakeDeg": 26.1, "seats": 52 },
+                { "row": 5, "distance": 4.2, "elevation": 2.744, "rakeDeg": 26.3, "seats": 52 },
+                { "row": 6, "distance": 5, "elevation": 3.14, "rakeDeg": 26.6, "seats": 52 },
+                { "row": 7, "distance": 5.8, "elevation": 3.54, "rakeDeg": 26.8, "seats": 52 },
+                { "row": 8, "distance": 6.6, "elevation": 3.944, "rakeDeg": 27, "seats": 52 },
+                { "row": 9, "distance": 7.4, "elevation": 4.352, "rakeDeg": 27.2, "seats": 52 },
+                { "row": 10, "distance": 8.2, "elevation": 4.764, "rakeDeg": 27.5, "seats": 52 },
+                { "row": 11, "distance": 9, "elevation": 5.18, "rakeDeg": 27.7, "seats": 52 },
+                { "row": 12, "distance": 9.8, "elevation": 5.6, "rakeDeg": 27.9, "seats": 52 },
+                { "row": 13, "distance": 10.6, "elevation": 6.024, "rakeDeg": 28.1, "seats": 52 },
+                { "row": 14, "distance": 11.4, "elevation": 6.452, "rakeDeg": 28.4, "seats": 52 },
+                { "row": 15, "distance": 12.2, "elevation": 6.884, "rakeDeg": 28.6, "seats": 52 },
+                { "row": 16, "distance": 13, "elevation": 7.32, "rakeDeg": 28.8, "seats": 52 },
+                { "row": 17, "distance": 13.8, "elevation": 7.76, "rakeDeg": 29, "seats": 52 },
+                { "row": 18, "distance": 14.6, "elevation": 8.204, "rakeDeg": 29.2, "seats": 52 },
+                { "row": 19, "distance": 15.4, "elevation": 8.652, "rakeDeg": 29.5, "seats": 52 },
+                { "row": 20, "distance": 16.2, "elevation": 9.104, "rakeDeg": 29.7, "seats": 52 },
+                { "row": 21, "distance": 17, "elevation": 9.56, "rakeDeg": 29.9, "seats": 52 },
+                { "row": 22, "distance": 17.8, "elevation": 10.02, "rakeDeg": 29.9, "seats": 52 }
+              ]
+            },
+            {
+              "code": "EC",
+              "name": "Sector EC",
+              "tier": "c",
+              "category": "standard",
+              "estimated": false,
+              "span": { "from": 192.982, "to": 221.73 },
+              "rows": [
+                { "row": 1, "distance": 1, "elevation": 1.2, "rakeDeg": 25.4, "seats": 52 },
+                { "row": 2, "distance": 1.8, "elevation": 1.58, "rakeDeg": 25.6, "seats": 52 },
+                { "row": 3, "distance": 2.6, "elevation": 1.964, "rakeDeg": 25.9, "seats": 52 },
+                { "row": 4, "distance": 3.4, "elevation": 2.352, "rakeDeg": 26.1, "seats": 52 },
+                { "row": 5, "distance": 4.2, "elevation": 2.744, "rakeDeg": 26.3, "seats": 52 },
+                { "row": 6, "distance": 5, "elevation": 3.14, "rakeDeg": 26.6, "seats": 52 },
+                { "row": 7, "distance": 5.8, "elevation": 3.54, "rakeDeg": 26.8, "seats": 52 },
+                { "row": 8, "distance": 6.6, "elevation": 3.944, "rakeDeg": 27, "seats": 52 },
+                { "row": 9, "distance": 7.4, "elevation": 4.352, "rakeDeg": 27.2, "seats": 52 },
+                { "row": 10, "distance": 8.2, "elevation": 4.764, "rakeDeg": 27.5, "seats": 52 },
+                { "row": 11, "distance": 9, "elevation": 5.18, "rakeDeg": 27.7, "seats": 52 },
+                { "row": 12, "distance": 9.8, "elevation": 5.6, "rakeDeg": 27.9, "seats": 52 },
+                { "row": 13, "distance": 10.6, "elevation": 6.024, "rakeDeg": 28.1, "seats": 52 },
+                { "row": 14, "distance": 11.4, "elevation": 6.452, "rakeDeg": 28.4, "seats": 52 },
+                { "row": 15, "distance": 12.2, "elevation": 6.884, "rakeDeg": 28.6, "seats": 52 },
+                { "row": 16, "distance": 13, "elevation": 7.32, "rakeDeg": 28.8, "seats": 52 },
+                { "row": 17, "distance": 13.8, "elevation": 7.76, "rakeDeg": 29, "seats": 52 },
+                { "row": 18, "distance": 14.6, "elevation": 8.204, "rakeDeg": 29.2, "seats": 52 },
+                { "row": 19, "distance": 15.4, "elevation": 8.652, "rakeDeg": 29.5, "seats": 52 },
+                { "row": 20, "distance": 16.2, "elevation": 9.104, "rakeDeg": 29.7, "seats": 52 },
+                { "row": 21, "distance": 17, "elevation": 9.56, "rakeDeg": 29.9, "seats": 52 },
+                { "row": 22, "distance": 17.8, "elevation": 10.02, "rakeDeg": 29.9, "seats": 52 }
+              ]
+            },
+            {
+              "code": "ED",
+              "name": "Sector ED",
+              "tier": "b",
+              "category": "standard",
+              "estimated": false,
+              "span": { "from": 221.73, "to": 250.478 },
+              "rows": [
+                { "row": 1, "distance": 1, "elevation": 1.2, "rakeDeg": 25.4, "seats": 53 },
+                { "row": 2, "distance": 1.8, "elevation": 1.58, "rakeDeg": 25.6, "seats": 54 },
+                { "row": 3, "distance": 2.6, "elevation": 1.964, "rakeDeg": 25.9, "seats": 56 },
+                { "row": 4, "distance": 3.4, "elevation": 2.352, "rakeDeg": 26.1, "seats": 57 },
+                { "row": 5, "distance": 4.2, "elevation": 2.744, "rakeDeg": 26.3, "seats": 58 },
+                { "row": 6, "distance": 5, "elevation": 3.14, "rakeDeg": 26.6, "seats": 59 },
+                { "row": 7, "distance": 5.8, "elevation": 3.54, "rakeDeg": 26.8, "seats": 61 },
+                { "row": 8, "distance": 6.6, "elevation": 3.944, "rakeDeg": 27, "seats": 62 },
+                { "row": 9, "distance": 7.4, "elevation": 4.352, "rakeDeg": 27.2, "seats": 63 },
+                { "row": 10, "distance": 8.2, "elevation": 4.764, "rakeDeg": 27.5, "seats": 64 },
+                { "row": 11, "distance": 9, "elevation": 5.18, "rakeDeg": 27.7, "seats": 66 },
+                { "row": 12, "distance": 9.8, "elevation": 5.6, "rakeDeg": 27.9, "seats": 67 },
+                { "row": 13, "distance": 10.6, "elevation": 6.024, "rakeDeg": 28.1, "seats": 68 },
+                { "row": 14, "distance": 11.4, "elevation": 6.452, "rakeDeg": 28.4, "seats": 69 },
+                { "row": 15, "distance": 12.2, "elevation": 6.884, "rakeDeg": 28.6, "seats": 70 },
+                { "row": 16, "distance": 13, "elevation": 7.32, "rakeDeg": 28.8, "seats": 71 },
+                { "row": 17, "distance": 13.8, "elevation": 7.76, "rakeDeg": 29, "seats": 72 },
+                { "row": 18, "distance": 14.6, "elevation": 8.204, "rakeDeg": 29.2, "seats": 74 },
+                { "row": 19, "distance": 15.4, "elevation": 8.652, "rakeDeg": 29.5, "seats": 75 },
+                { "row": 20, "distance": 16.2, "elevation": 9.104, "rakeDeg": 29.7, "seats": 76 },
+                { "row": 21, "distance": 17, "elevation": 9.56, "rakeDeg": 29.9, "seats": 77 },
+                { "row": 22, "distance": 17.8, "elevation": 10.02, "rakeDeg": 29.9, "seats": 79 }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "S",
+      "name": "Peluza Sud",
+      "rings": [
+        {
+          "ring": 1,
+          "name": "Inel unic",
+          "parapetHeight": 1,
+          "slabThickness": null,
+          "backWallHeight": 2,
+          "sectors": [
+            {
+              "code": "SA",
+              "name": "Sector SA",
+              "tier": "a",
+              "category": "standard",
+              "estimated": false,
+              "span": { "from": 250.478, "to": 276.475 },
+              "rows": [
+                { "row": 1, "distance": 1, "elevation": 1.2, "rakeDeg": 25.4, "seats": 48 },
+                { "row": 2, "distance": 1.8, "elevation": 1.58, "rakeDeg": 25.6, "seats": 49 },
+                { "row": 3, "distance": 2.6, "elevation": 1.964, "rakeDeg": 25.9, "seats": 50 },
+                { "row": 4, "distance": 3.4, "elevation": 2.352, "rakeDeg": 26.1, "seats": 51 },
+                { "row": 5, "distance": 4.2, "elevation": 2.744, "rakeDeg": 26.3, "seats": 53 },
+                { "row": 6, "distance": 5, "elevation": 3.14, "rakeDeg": 26.6, "seats": 54 },
+                { "row": 7, "distance": 5.8, "elevation": 3.54, "rakeDeg": 26.8, "seats": 55 },
+                { "row": 8, "distance": 6.6, "elevation": 3.944, "rakeDeg": 27, "seats": 56 },
+                { "row": 9, "distance": 7.4, "elevation": 4.352, "rakeDeg": 27.2, "seats": 58 },
+                { "row": 10, "distance": 8.2, "elevation": 4.764, "rakeDeg": 27.5, "seats": 59 },
+                { "row": 11, "distance": 9, "elevation": 5.18, "rakeDeg": 27.7, "seats": 60 },
+                { "row": 12, "distance": 9.8, "elevation": 5.6, "rakeDeg": 27.9, "seats": 61 },
+                { "row": 13, "distance": 10.6, "elevation": 6.024, "rakeDeg": 28.1, "seats": 63 },
+                { "row": 14, "distance": 11.4, "elevation": 6.452, "rakeDeg": 28.4, "seats": 64 },
+                { "row": 15, "distance": 12.2, "elevation": 6.884, "rakeDeg": 28.6, "seats": 65 },
+                { "row": 16, "distance": 13, "elevation": 7.32, "rakeDeg": 28.8, "seats": 67 },
+                { "row": 17, "distance": 13.8, "elevation": 7.76, "rakeDeg": 29, "seats": 68 },
+                { "row": 18, "distance": 14.6, "elevation": 8.204, "rakeDeg": 29.2, "seats": 68 },
+                { "row": 19, "distance": 15.4, "elevation": 8.652, "rakeDeg": 29.5, "seats": 69 },
+                { "row": 20, "distance": 16.2, "elevation": 9.104, "rakeDeg": 29.7, "seats": 71 },
+                { "row": 21, "distance": 17, "elevation": 9.56, "rakeDeg": 29.9, "seats": 72 },
+                { "row": 22, "distance": 17.8, "elevation": 10.02, "rakeDeg": 29.9, "seats": 73 }
+              ]
+            },
+            {
+              "code": "SB",
+              "name": "Sector SB",
+              "tier": "a",
+              "category": "standard",
+              "estimated": false,
+              "span": { "from": 276.475, "to": 302.472 },
+              "rows": [
+                { "row": 1, "distance": 1, "elevation": 1.2, "rakeDeg": 25.4, "seats": 47 },
+                { "row": 2, "distance": 1.8, "elevation": 1.58, "rakeDeg": 25.6, "seats": 47 },
+                { "row": 3, "distance": 2.6, "elevation": 1.964, "rakeDeg": 25.9, "seats": 47 },
+                { "row": 4, "distance": 3.4, "elevation": 2.352, "rakeDeg": 26.1, "seats": 47 },
+                { "row": 5, "distance": 4.2, "elevation": 2.744, "rakeDeg": 26.3, "seats": 47 },
+                { "row": 6, "distance": 5, "elevation": 3.14, "rakeDeg": 26.6, "seats": 47 },
+                { "row": 7, "distance": 5.8, "elevation": 3.54, "rakeDeg": 26.8, "seats": 47 },
+                { "row": 8, "distance": 6.6, "elevation": 3.944, "rakeDeg": 27, "seats": 47 },
+                { "row": 9, "distance": 7.4, "elevation": 4.352, "rakeDeg": 27.2, "seats": 47 },
+                { "row": 10, "distance": 8.2, "elevation": 4.764, "rakeDeg": 27.5, "seats": 47 },
+                { "row": 11, "distance": 9, "elevation": 5.18, "rakeDeg": 27.7, "seats": 47 },
+                { "row": 12, "distance": 9.8, "elevation": 5.6, "rakeDeg": 27.9, "seats": 47 },
+                { "row": 13, "distance": 10.6, "elevation": 6.024, "rakeDeg": 28.1, "seats": 47 },
+                { "row": 14, "distance": 11.4, "elevation": 6.452, "rakeDeg": 28.4, "seats": 47 },
+                { "row": 15, "distance": 12.2, "elevation": 6.884, "rakeDeg": 28.6, "seats": 47 },
+                { "row": 16, "distance": 13, "elevation": 7.32, "rakeDeg": 28.8, "seats": 47 },
+                { "row": 17, "distance": 13.8, "elevation": 7.76, "rakeDeg": 29, "seats": 47 },
+                { "row": 18, "distance": 14.6, "elevation": 8.204, "rakeDeg": 29.2, "seats": 47 },
+                { "row": 19, "distance": 15.4, "elevation": 8.652, "rakeDeg": 29.5, "seats": 47 },
+                { "row": 20, "distance": 16.2, "elevation": 9.104, "rakeDeg": 29.7, "seats": 47 },
+                { "row": 21, "distance": 17, "elevation": 9.56, "rakeDeg": 29.9, "seats": 47 },
+                { "row": 22, "distance": 17.8, "elevation": 10.02, "rakeDeg": 29.9, "seats": 47 }
+              ]
+            },
+            {
+              "code": "SC",
+              "name": "Sector SC",
+              "tier": "a",
+              "category": "standard",
+              "estimated": false,
+              "span": { "from": 302.472, "to": 328.469 },
+              "rows": [
+                { "row": 1, "distance": 1, "elevation": 1.2, "rakeDeg": 25.4, "seats": 48 },
+                { "row": 2, "distance": 1.8, "elevation": 1.58, "rakeDeg": 25.6, "seats": 49 },
+                { "row": 3, "distance": 2.6, "elevation": 1.964, "rakeDeg": 25.9, "seats": 50 },
+                { "row": 4, "distance": 3.4, "elevation": 2.352, "rakeDeg": 26.1, "seats": 51 },
+                { "row": 5, "distance": 4.2, "elevation": 2.744, "rakeDeg": 26.3, "seats": 53 },
+                { "row": 6, "distance": 5, "elevation": 3.14, "rakeDeg": 26.6, "seats": 54 },
+                { "row": 7, "distance": 5.8, "elevation": 3.54, "rakeDeg": 26.8, "seats": 55 },
+                { "row": 8, "distance": 6.6, "elevation": 3.944, "rakeDeg": 27, "seats": 56 },
+                { "row": 9, "distance": 7.4, "elevation": 4.352, "rakeDeg": 27.2, "seats": 58 },
+                { "row": 10, "distance": 8.2, "elevation": 4.764, "rakeDeg": 27.5, "seats": 59 },
+                { "row": 11, "distance": 9, "elevation": 5.18, "rakeDeg": 27.7, "seats": 60 },
+                { "row": 12, "distance": 9.8, "elevation": 5.6, "rakeDeg": 27.9, "seats": 61 },
+                { "row": 13, "distance": 10.6, "elevation": 6.024, "rakeDeg": 28.1, "seats": 63 },
+                { "row": 14, "distance": 11.4, "elevation": 6.452, "rakeDeg": 28.4, "seats": 64 },
+                { "row": 15, "distance": 12.2, "elevation": 6.884, "rakeDeg": 28.6, "seats": 65 },
+                { "row": 16, "distance": 13, "elevation": 7.32, "rakeDeg": 28.8, "seats": 67 },
+                { "row": 17, "distance": 13.8, "elevation": 7.76, "rakeDeg": 29, "seats": 68 },
+                { "row": 18, "distance": 14.6, "elevation": 8.204, "rakeDeg": 29.2, "seats": 68 },
+                { "row": 19, "distance": 15.4, "elevation": 8.652, "rakeDeg": 29.5, "seats": 69 },
+                { "row": 20, "distance": 16.2, "elevation": 9.104, "rakeDeg": 29.7, "seats": 71 },
+                { "row": 21, "distance": 17, "elevation": 9.56, "rakeDeg": 29.9, "seats": 72 },
+                { "row": 22, "distance": 17.8, "elevation": 10.02, "rakeDeg": 29.9, "seats": 73 }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "roof": {
+    "estimated": false,
+    "segments": [
+      { "from": -57.496, "to": 328.469 }
+    ],
+    "inner": { "distance": 3, "height": 21 },
+    "outer": { "distance": 22, "height": 24 },
+    "columnDistance": 19.5,
+    "trussDepth": 3,
+    "translucentDepth": 4,
+    "frameSpacing": 8
+  },
+  "facade": {
+    "estimated": false,
+    "distance": 22,
+    "height": 24
+  },
+  "floodlights": {
+    "count": 240
+  },
+  "screens": [
+    { "x": 79.5, "z": 0, "elevation": 17, "width": 10, "height": 4 }
+  ]
+}

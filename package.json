@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "author:cluj": "node scripts/author-cluj-arena.ts"
+    "author:cluj": "node scripts/author-cluj-arena.ts",
+    "author:example": "node scripts/author-example-arena.ts"
   },
   "dependencies": {
     "@react-three/drei": "10.7.9",

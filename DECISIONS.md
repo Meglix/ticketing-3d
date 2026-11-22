@@ -134,3 +134,21 @@ Each entry: **decision** — alternatives — why. Newest at the bottom.
 20. **Representative seat = middle seat of the middle row; label anchor 2 m
     above the middle row at the middle of the span.** Why: simple,
     deterministic, and always on the visible tread.
+
+21. **A second, fictional venue (`venues/example-arena.json`, football-only,
+    one ring, no track, continuous roof) and invariant tests over every venue
+    file.** Alternatives: only Cluj Arena. Why: it proves the generator is
+    venue-agnostic (different corner radius, no track, single ring, no gaps) and
+    shows what "add a venue" means. It paid off immediately: its first profile
+    (0.32 m front risers) gave a 24 mm touchline C-value at the oblique corner
+    seats, and the suite rejected it. The risers were raised to 0.38 → 0.46 m.
+    `?venue=example-arena` shows it in the app.
+
+22. **Venues are discovered with `import.meta.glob('/venues/*.json')`, chosen by
+    `?venue=<id>`.** Alternatives: a hard-coded import; a registry file to keep
+    in sync. Why: adding a venue = adding one JSON file.
+
+23. **In-app `?fps` meter (rAF-based) + `window.__renderInfo` (three.js
+    draw calls / triangles).** Why: headless CI renders with SwiftShader (CPU),
+    so its FPS is only a floor. The meter lets the owner measure on the actual
+    demo laptop and phone.

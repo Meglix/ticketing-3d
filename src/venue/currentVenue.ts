@@ -1,13 +1,31 @@
-import rawConfig from '../../venues/cluj-arena.json';
 import { loadVenue, type Venue } from './loadVenue.ts';
 
 /**
- * The venue shown by the app, loaded lazily and memoised. A bad config
- * throws here; App catches it and shows the error instead of a broken scene.
+ * Every JSON file in /venues is bundled; the app shows the one named by
+ * `?venue=<id>` (default: cluj-arena). Adding a venue = adding a JSON file.
+ *
+ * Loaded lazily and memoised. A bad config throws a VenueConfigError here;
+ * App catches it and shows the messages instead of a broken scene.
  */
+const files = import.meta.glob<unknown>('../../venues/*.json', { eager: true, import: 'default' });
+
+export const DEFAULT_VENUE_ID = 'cluj-arena';
+
+function requestedVenueId(): string {
+  if (typeof window === 'undefined') return DEFAULT_VENUE_ID;
+  return new URLSearchParams(window.location.search).get('venue') ?? DEFAULT_VENUE_ID;
+}
+
 let cached: Venue | null = null;
 
 export function getVenue(): Venue {
-  if (!cached) cached = loadVenue(rawConfig);
+  if (cached) return cached;
+  const id = requestedVenueId();
+  const entry = Object.entries(files).find(([path]) => path.endsWith(`/${id}.json`));
+  if (!entry) {
+    const known = Object.keys(files).map((p) => p.replace(/^.*\/(.*)\.json$/, '$1'));
+    throw new Error(`Unknown venue "${id}". Available: ${known.join(', ')}`);
+  }
+  cached = loadVenue(entry[1]);
   return cached;
 }

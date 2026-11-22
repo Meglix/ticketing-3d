@@ -24,6 +24,7 @@ import type {
   VenueConfig,
 } from '../src/venue/schema.ts';
 import { parseVenueConfig } from '../src/venue/validate.ts';
+import { fitCounts, formatVenueJson, profile, round } from './authoring.ts';
 
 // ---------------------------------------------------------------------------
 // Sourced numbers (reference/FACTS.md)
@@ -57,26 +58,6 @@ const CENTRE = {
 };
 const TRIBUNE_HALF = SX + HALF_CORNER; // 85.56
 const PELUZA_HALF = SZ + HALF_CORNER; // 43.56
-
-const round = (v: number, digits = 3) => Number(v.toFixed(digits));
-
-/** Rows of a ring with a convex profile: risers grow linearly from riserFront to riserBack. */
-function profile(count: number, firstDistance: number, firstElevation: number, riserFront: number, riserBack: number, depth = 0.8): Omit<RowConfig, 'seats'>[] {
-  const risers = Array.from({ length: count - 1 }, (_, j) => riserFront + ((riserBack - riserFront) * j) / Math.max(1, count - 2));
-  const rows: Omit<RowConfig, 'seats'>[] = [];
-  let elevation = firstElevation;
-  for (let i = 0; i < count; i++) {
-    const riser = risers[Math.min(i, risers.length - 1)] ?? 0;
-    rows.push({
-      row: i + 1,
-      distance: round(firstDistance + i * depth),
-      elevation: round(elevation),
-      rakeDeg: count > 1 ? round((Math.atan2(riser, depth) * 180) / Math.PI, 1) : 0,
-    });
-    elevation += risers[i] ?? 0;
-  }
-  return rows;
-}
 
 const LOWER = profile(14, 1.0, 1.6, 0.3, 0.4);
 const UPPER = profile(16, 10.0, 11.5, 0.47, 0.54);
@@ -214,25 +195,6 @@ const standDrafts: Array<{ id: string; name: string; rings: Array<{ ring: number
 // Capacity fit: geometric maximum per row, scaled to the sourced totals
 // ---------------------------------------------------------------------------
 
-/** Integer counts n_i ≤ max_i with Σ n_i = target, proportional to max_i (largest remainders). */
-function fitCounts(maxes: number[], target: number): number[] {
-  const sum = maxes.reduce((a, b) => a + b, 0);
-  if (sum < target) throw new Error(`only ${sum} seats fit, need ${target}`);
-  const f = target / sum;
-  const counts = maxes.map((m) => Math.floor(m * f));
-  let deficit = target - counts.reduce((a, b) => a + b, 0);
-  const order = maxes.map((m, i) => ({ i, rem: m * f - Math.floor(m * f) })).sort((a, b) => b.rem - a.rem || a.i - b.i);
-  for (const { i } of order) {
-    if (deficit === 0) break;
-    if (counts[i]! < maxes[i]!) {
-      counts[i]!++;
-      deficit--;
-    }
-  }
-  if (deficit !== 0) throw new Error('could not distribute seats');
-  return counts;
-}
-
 interface RowRef {
   draft: SectorDraft;
   rowIndex: number;
@@ -344,12 +306,8 @@ const config: VenueConfig = {
 // Fail fast: the output must pass the same validation the app runs.
 parseVenueConfig(config);
 
-// Pretty-print with one line per row / span to keep the file reviewable.
-const json = JSON.stringify(config, null, 2).replace(/\{\n\s+("(?:row|from|x|distance|id)"[^{}[\]]*?)\n\s+\}/g, (_m, body: string) =>
-  `{ ${body.replace(/\n\s+/g, ' ')} }`,
-);
 const outPath = fileURLToPath(new URL('../venues/cluj-arena.json', import.meta.url));
-writeFileSync(outPath, json + '\n');
+writeFileSync(outPath, formatVenueJson(config));
 
 // Summary for REFERENCE_ANALYSIS.md / REPORT.md.
 console.log(`wrote ${outPath}`);
