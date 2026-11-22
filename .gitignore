@@ -6,3 +6,5 @@ playwright-report
 .vercel
 *.log
 .DS_Store
+.claude/
+screenshots/*.tmp.png
