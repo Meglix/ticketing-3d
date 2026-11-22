@@ -1,16 +1,20 @@
 # Cluj Arena — "view from your seat" (sales demo)
 
-A browser demo of a 3D ticketing experience: see the whole stadium, tap a
-sector, fly to a seat in it, look around from that seat, and open a clearly
-fake checkout. UI in Romanian.
+A browser demo of a 3D ticketing experience, styled as a stadium at night.
+A short intro switches the floodlights on, and the stadium appears as a
+luminous model. Tap a sector to see it up close, tap a free seat, and the
+camera flies into it: look around from your seat and open a clearly fake
+checkout. UI in Romanian.
 
 > **Demo only.** Geometry is approximate (see [reference/FACTS.md](reference/FACTS.md)),
 > prices are demo prices, and the checkout takes no payment. No official logos or
 > trademarks are used, and no third-party photos are shipped. All geometry is procedural.
 
-| Overview | Seat view |
-|---|---|
-| ![overview](screenshots/desktop-overview.png) | ![seat](screenshots/desktop-seat-tribuna-II-2M2.png) |
+| Overview | Sector focus | Seat view |
+|---|---|---|
+| ![overview](screenshots/desktop-2-overview.jpg) | ![sector](screenshots/desktop-6-sector-with-gold-seat.jpg) | ![seat](screenshots/desktop-7-seat-tribuna-II-2M2.jpg) |
+
+A recording of the whole flow: [screenshots/flow.webm](screenshots/flow.webm).
 
 ## Run locally
 
@@ -29,6 +33,7 @@ Open http://localhost:5173. Useful URL parameters:
 - `?fps`: on-screen frame-rate meter (measure on the real demo laptop/phone)
 - `?venue=example-arena`: the second, fictional venue
 - `?dpr=1.5`: pin the render resolution (otherwise it adapts to the device's speed)
+- `?quality=high|medium|low`: pin the post-processing tier (otherwise it adapts)
 
 Checks:
 
@@ -44,9 +49,10 @@ npm run build
 npm run e2e
 ```
 
-`npm run e2e` builds the app, serves it with `vite preview` and runs Playwright
-(real taps on a sector in each stand at 1440×900 and 390×844, screenshots into
-`screenshots/`, console-error check, FPS measurement). It uses the Chromium that
+`npm run e2e` builds the app, serves it with `vite preview` and runs Playwright:
+real taps through intro → overview → sector → seat → checkout and back at
+1440×900 and 390×844, stills of each stage into `screenshots/`, a video of the
+flow (`screenshots/flow.webm`), a console-error check, and FPS per stage. It uses the Chromium that
 matches `@playwright/test`; on a fresh machine install it once with
 `npx playwright install chromium`.
 
@@ -57,10 +63,11 @@ venues/*.json        venue data (stands → rings → sectors → rows)
 scripts/             authoring scripts that produced the estimated venue data
 src/venue/           zod schema + validation (fail fast) + loader
 src/geometry/        pure TypeScript generator: seats, structure buffers, sightlines (+ tests)
-src/scene/           React Three Fiber rendering
-src/camera/          camera poses, flights, look-around (+ tests)
-src/interaction/     sector tap/hover handling, e2e test seam
-src/ui/              Romanian overlay (header, legend, seat panel, fake checkout)
+src/scene/           React Three Fiber rendering: night look, post-processing, seats, LED boards
+src/camera/          camera poses (overview, sector focus, seat view), flights, intro (+ tests)
+src/interaction/     sector and seat tap/hover handling, seat picking (+ tests), e2e test seam
+src/demo/            DEMO DATA: deterministic fake seat availability (+ tests)
+src/ui/              Romanian overlay (intro card, sector bar, seat bar, fake checkout)
 src/state/store.ts   the one small app store
 e2e/                 Playwright specs
 reference/           research notes: what is sourced vs. estimated
