@@ -1327,7 +1327,7 @@ body {
   font-size: 10.5px;
   font-weight: 500;
   color: rgba(255, 226, 163, 0.72);
-  background: rgba(30, 22, 6, 0.4);
+  background: rgba(16, 12, 4, 0.82); /* opaque enough that a glowing LED board never shows through */
   border-color: rgba(245, 185, 66, 0.22);
 }
 @media (min-width: 768px) {
@@ -1512,4 +1512,83 @@ body {
   from {
     opacity: 0;
   }
+}
+
+/* ---- V2 review fixes --------------------------------------------------------- */
+
+/* "A · B · C" lists that wrap without a dangling separator (DotList.tsx). Each
+   item draws its dot in the gap on its left; the row is shifted 1em left
+   inside a clipping box, so the dot of the first item on every line is cut off. */
+.ui-seatbar__line.ui-dots,
+.ui-seatbar__sub.ui-dots {
+  display: block;
+  overflow: hidden;
+  padding: 3px 0; /* room for the tier dot's glow */
+}
+.ui-seatbar__sub.ui-dots {
+  margin-top: 1px;
+}
+.ui-dots__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 2px;
+  margin-left: -1em;
+}
+.ui-dots__item {
+  position: relative;
+  display: block; /* inline content inside: keeps the space in "Sector 1C" (a flex item would drop it) */
+  margin-left: 1em;
+  white-space: nowrap;
+}
+.ui-dots__item::before {
+  content: '·';
+  content: '·' / '';
+  position: absolute;
+  left: -0.62em;
+  color: rgba(255, 255, 255, 0.3);
+}
+.ui-dots__item--plain::before {
+  content: none;
+}
+
+/* A soft scrim behind the header: floodlight strips and LED boards never run
+   through its text, and the demo badge never sits on a glowing board. */
+.ui-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 150px;
+  background: linear-gradient(to bottom, rgba(2, 3, 6, 0.86), rgba(2, 3, 6, 0.6) 55%, rgba(2, 3, 6, 0));
+  pointer-events: none;
+  transition: opacity 0.8s ease;
+}
+.ui-overlay.is-intro::before {
+  opacity: 0;
+}
+
+/* Intro title card: readable over the bright bowl on a phone. */
+.ui-intro__title {
+  text-shadow: 0 0 24px rgba(0, 0, 0, 0.85), 0 1px 3px rgba(0, 0, 0, 0.9);
+}
+.ui-intro__sub,
+.ui-intro__skip {
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.95), 0 1px 2px rgba(0, 0, 0, 0.95);
+}
+
+/* Overview: the near stand fades into black at the bottom (as in the
+   reference), which also gives the hint and legend a calm background. Not in
+   the seat view, where your own seat sits at the bottom of the frame. */
+.ui-overlay::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 30%;
+  background: linear-gradient(to top, rgba(2, 3, 6, 0.7), rgba(2, 3, 6, 0));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+.ui-overlay.is-overview:not(.is-intro)::after {
+  opacity: 1;
 }

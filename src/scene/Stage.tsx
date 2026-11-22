@@ -1,4 +1,5 @@
 import { PerformanceMonitor } from '@react-three/drei';
+import { captureMode } from '../debug/capture.ts';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { type ReactNode, useMemo, useRef, useState } from 'react';
 import { SRGBColorSpace } from 'three';
@@ -98,6 +99,7 @@ export function Stage({ venue, children }: { venue: Venue; children?: ReactNode 
     <div className="stage" data-quality={tier} data-dpr={dpr}>
       <Canvas
         dpr={dpr}
+        frameloop={captureMode ? 'never' : 'always'} // ?capture: frames are stepped by the flow-video spec
         // The composer renders off-screen and does its own anti-aliasing (SMAA).
         gl={{ antialias: false, powerPreference: 'high-performance', stencil: false }}
         // A sensible default view (high above Tribuna II); the camera rig takes over.

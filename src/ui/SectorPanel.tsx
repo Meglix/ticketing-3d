@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { availabilityFor, availableIn } from '../demo/availability.ts';
 import { actions, useAppState } from '../state/store.ts';
 import type { Venue } from '../venue/loadVenue.ts';
+import { DotList } from './DotList.tsx';
 import { formatLei, sectorSummary } from './format.ts';
 import { ArrowLeft } from './icons.tsx';
 import { strings } from './strings.ts';
@@ -30,31 +31,27 @@ export function SectorPanel({ venue }: { venue: Venue }) {
   return (
     <section className="ui-sectorbar" aria-label={strings.sectorPanelLabel} key={summary.code}>
       <div className="ui-sectorbar__info">
-        <p className="ui-seatbar__line">
-          <span className="ui-seatbar__dot" style={{ background: summary.tierColor }} aria-hidden />
-          <span>{summary.standName}</span>
-          <span className="ui-sep" aria-hidden>·</span>
-          <span>
-            {strings.fieldSector} <strong>{summary.code}</strong>
-          </span>
-          {!press && (
+        <DotList
+          className="ui-seatbar__line"
+          items={[
             <>
-              <span className="ui-sep" aria-hidden>·</span>
-              <strong className="ui-seatbar__price">{strings.fromPrice(formatLei(summary.price!))}</strong>
-            </>
-          )}
-        </p>
-        <p className="ui-seatbar__sub">
-          {summary.ringName}
-          <span className="ui-sep" aria-hidden>·</span>
-          {press ? strings.pressSector : free > 0 ? strings.freeOf(free, total) : strings.noneFree}
-          {!press && free > 0 && (
+              <span className="ui-seatbar__dot" style={{ background: summary.tierColor }} aria-hidden />
+              {summary.standName}
+            </>,
             <>
-              <span className="ui-sep" aria-hidden>·</span>
-              <span className="ui-sectorbar__cta">{canHover ? strings.pickSeatMouse : strings.pickSeatTouch}</span>
-            </>
-          )}
-        </p>
+              {strings.fieldSector} <strong>{summary.code}</strong>
+            </>,
+            !press && <strong className="ui-seatbar__price">{strings.fromPrice(formatLei(summary.price!))}</strong>,
+          ]}
+        />
+        <DotList
+          className="ui-seatbar__sub"
+          items={[
+            summary.ringName,
+            press ? strings.pressSector : free > 0 ? strings.freeOf(free, total) : strings.noneFree,
+            !press && free > 0 && <span className="ui-sectorbar__cta">{canHover ? strings.pickSeatMouse : strings.pickSeatTouch}</span>,
+          ]}
+        />
         <ul className="ui-states" aria-hidden>
           <li>
             <span className="ui-state" style={{ background: summary.tierColor }} /> {strings.stateFree}

@@ -6,10 +6,12 @@ import {
   Color,
   DoubleSide,
   Float32BufferAttribute,
+  type Group,
   InstancedBufferAttribute,
   type InstancedMesh,
   Matrix4,
   type Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
   type PointLight,
 } from 'three';
@@ -80,17 +82,25 @@ function makeFarSeat(): BufferGeometry {
   return g;
 }
 
-/** Detail LOD: shaped pan, two-part backrest, one armrest (shared with the neighbour), pedestal. */
+/** Detail LOD: shaped pan, bucket backrest (centre + two forward-angled wings), headrest, one armrest (shared with the neighbour), pedestal. */
 function makeDetailSeat(): BufferGeometry {
   const pan = new BoxGeometry(0.44, 0.075, 0.41);
   pan.translate(0, 0.445, 0.035);
   const lip = new BoxGeometry(0.44, 0.05, 0.06);
   lip.rotateX(0.5);
   lip.translate(0, 0.43, 0.245);
-  const back = new BoxGeometry(0.44, 0.36, 0.055);
+  const back = new BoxGeometry(0.3, 0.36, 0.055);
   back.rotateX(-0.16);
   back.translate(0, 0.66, -0.175);
-  const head = new BoxGeometry(0.42, 0.13, 0.05);
+  // Side wings turned ~26° towards the spectator: reads as a moulded shell, not a plank.
+  const wing = (side: 1 | -1) => {
+    const g = new BoxGeometry(0.085, 0.34, 0.05);
+    g.rotateY(-side * 0.45);
+    g.rotateX(-0.16);
+    g.translate(side * 0.185, 0.655, -0.155);
+    return g;
+  };
+  const head = new BoxGeometry(0.3, 0.13, 0.05);
   head.rotateX(-0.22);
   head.translate(0, 0.89, -0.215);
   const arm = new BoxGeometry(0.045, 0.035, 0.36);
@@ -99,7 +109,7 @@ function makeDetailSeat(): BufferGeometry {
   armPost.translate(0.245, 0.52, -0.13);
   const leg = new BoxGeometry(0.06, 0.4, 0.06);
   leg.translate(0, 0.2, -0.06);
-  return merge([pan, lip, back, head, arm, armPost, leg]);
+  return merge([pan, lip, back, wing(1), wing(-1), head, arm, armPost, leg]);
 }
 
 /** Make instance colours also emissive, scaled by a shared uniform (the luminous look). */
@@ -125,6 +135,8 @@ const WHITE = new Color('#ffffff');
 const SOLD_COLOR = new Color(PALETTE.sold);
 const GOLD = new Color(PALETTE.gold);
 const DIM = new Color('#11141b');
+/** Height of the pin's head above the seat's tread (m). */
+const PIN_TOP = 3.6;
 
 export function Seats({ venue }: { venue: Venue }) {
   const nearRef = useRef<InstancedMesh>(null);
@@ -133,6 +145,8 @@ export function Seats({ venue }: { venue: Venue }) {
   const goldRef = useRef<Mesh>(null);
   const goldLightRef = useRef<PointLight>(null);
   const hoverRef = useRef<Mesh>(null);
+  const pinRef = useRef<Group>(null);
+  const fillRef = useRef<PointLight>(null);
   const { seats, sectors } = venue.manifest;
   const count = seats.length;
   const sold = useMemo(() => availabilityFor(venue.manifest), [venue]);
@@ -147,7 +161,10 @@ export function Seats({ venue }: { venue: Venue }) {
       far: glowMaterial(glow, { roughness: 0.55, metalness: 0, side: DoubleSide }),
       detail: glowMaterial(detailGlow, { roughness: 0.48, metalness: 0.05 }),
       gold: new MeshStandardMaterial({ color: GOLD, emissive: GOLD, emissiveIntensity: 0.8, roughness: 0.6, metalness: 0 }),
-      hover: new MeshStandardMaterial({ color: '#dfe9ff', emissive: '#9ec2ff', emissiveIntensity: 1.35, roughness: 0.4 }), // blooms a little: stands out even on silver VIP seats
+      // Cyan and raised: distinct from every tier colour, including the silver VIP seats.
+      hover: new MeshStandardMaterial({ color: '#c8f4ff', emissive: '#2fd2ff', emissiveIntensity: 1.6, roughness: 0.4 }),
+      /** The pin above your seat in the sector focus (HDR gold, unlit: it blooms). */
+      pin: new MeshBasicMaterial({ color: new Color(PALETTE.gold).multiplyScalar(2.2), transparent: true, depthWrite: false }),
     }),
     [glow, detailGlow],
   );
@@ -259,12 +276,12 @@ export function Seats({ venue }: { venue: Venue }) {
       mesh.matrixWorldNeedsUpdate = true;
     };
     place(goldRef.current, chosen, 1.015);
-    place(hoverRef.current, hovered, 1.03);
-    const light = goldLightRef.current;
-    if (light) {
-      light.visible = !!chosen && view !== 'overview';
-      if (chosen) light.position.set(chosen.position.x, chosen.position.y + 1.3, chosen.position.z);
-    }
+    place(hoverRef.current, hovered, 1.12);
+    if (hoverRef.current?.visible) hoverRef.current.matrix.elements[13]! += 0.05; // lifted a little
+    // The lights stay in the scene (intensity 0 when unused): toggling a
+    // light's visibility changes the light count and recompiles every lit shader.
+    if (chosen) goldLightRef.current?.position.set(chosen.position.x, chosen.position.y + 1.3, chosen.position.z);
+    if (chosen) pinRef.current?.position.set(chosen.position.x, chosen.position.y, chosen.position.z);
   }, [chosen, hovered, view]);
 
   useFrame(({ camera }) => {
@@ -272,13 +289,32 @@ export function Seats({ venue }: { venue: Venue }) {
     if (nearRef.current) nearRef.current.visible = !far;
     if (farRef.current) farRef.current.visible = far;
     // Luminous overview: seats emit their colour; up close they are lit instead.
-    glow.value = (0.1 + 0.9 * look.holo) * (0.35 + 0.65 * look.power);
+    glow.value = (0.1 + 0.6 * look.holo) * (0.35 + 0.65 * look.power);
     // The chosen seat pulses softly. Up close (seat view: the camera is ~1 m
     // behind it) full strength would blow it out to a flat white-gold slab, so
     // glow and light fade with the camera's distance to the seat.
-    const near = chosen ? smoothstep(2.5, 18, camera.position.distanceTo(chosen.position)) : 1;
-    mats.gold.emissiveIntensity = (0.18 + 0.57 * near) * (1 + 0.33 * Math.sin(performance.now() / 380));
-    if (goldLightRef.current) goldLightRef.current.intensity = 0.6 + 1.9 * near;
+    const dist = chosen ? camera.position.distanceTo(chosen.position) : Infinity;
+    const near = chosen ? smoothstep(2.5, 18, dist) : 1;
+    const active = !!chosen && view !== 'overview';
+    const pulse = Math.sin(performance.now() / 380);
+    mats.gold.emissiveIntensity = (0.34 + 0.41 * near) * (1 + 0.3 * pulse);
+    if (goldLightRef.current) goldLightRef.current.intensity = active ? 1.1 + 1.4 * near : 0;
+    // Seat view: a soft fill from behind the camera, so the backs of the rows
+    // in front (which face away from the floodlights) aren't black silhouettes.
+    const seated = active && view === 'seat' ? 1 - smoothstep(3, 8, dist) : 0;
+    if (fillRef.current) {
+      fillRef.current.position.copy(camera.position);
+      fillRef.current.position.y += 0.4;
+      fillRef.current.intensity = 3.2 * seated;
+    }
+    // Sector focus: a gold pin over your seat (a seat is only ~12 px wide there).
+    const pin = pinRef.current;
+    if (pin) {
+      const show = active ? smoothstep(10, 22, dist) : 0;
+      pin.visible = show > 0.01;
+      mats.pin.opacity = show;
+      pin.children[1]!.position.y = PIN_TOP + 0.12 * pulse;
+    }
   });
 
   useLayoutEffect(
@@ -296,7 +332,16 @@ export function Seats({ venue }: { venue: Venue }) {
       <instancedMesh ref={detailRef} args={[geo.detail, mats.detail, maxSector]} frustumCulled={false} />
       <mesh ref={goldRef} geometry={geo.detail} material={mats.gold} visible={false} />
       <mesh ref={hoverRef} geometry={geo.detail} material={mats.hover} visible={false} />
-      <pointLight ref={goldLightRef} color={PALETTE.gold} intensity={2.5} distance={4} decay={2} visible={false} />
+      <pointLight ref={goldLightRef} color={PALETTE.gold} intensity={0} distance={4} decay={2} />
+      <pointLight ref={fillRef} color="#d4e0ff" intensity={0} distance={10} decay={2} />
+      <group ref={pinRef} visible={false}>
+        <mesh material={mats.pin} position={[0, (PIN_TOP + 1.1) / 2, 0]}>
+          <cylinderGeometry args={[0.035, 0.035, PIN_TOP - 1.1, 6]} />
+        </mesh>
+        <mesh material={mats.pin} position={[0, PIN_TOP, 0]}>
+          <sphereGeometry args={[0.5, 16, 12]} />
+        </mesh>
+      </group>
     </>
   );
 }

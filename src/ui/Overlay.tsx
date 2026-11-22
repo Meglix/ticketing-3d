@@ -18,8 +18,9 @@ import './ui.css';
  */
 export function Overlay({ venue }: { venue: Venue }) {
   const intro = useAppState((s) => s.introPlaying);
+  const overview = useAppState((s) => s.view === 'overview');
   return (
-    <div className={`ui-overlay${intro ? ' is-intro' : ''}`}>
+    <div className={`ui-overlay${intro ? ' is-intro' : ''}${overview ? ' is-overview' : ''}`}>
       <IntroOverlay venue={venue} />
       <Header venue={venue} />
       {/* Phone: hint stacked above the legend bar. Desktop: `display: contents`, each placed on its own. */}

@@ -277,7 +277,7 @@ canvas container (`data-dpr`, `data-quality`).
   and 24° above, FOV 42°. It is framed so the sector fills about 78 % of the
   screen, including its LED board. Because the camera is always on the field
   side of the roof edge, the roof never gets in the way.
-- *Seat view* (`seatViewPose`): over the shoulder, 0.85 m behind and 0.3 m above
+- *Seat view* (`seatViewPose`): over the shoulder, 0.85 m behind and 0.14 m above
   the seated eye point, looking along the seat's facing and slightly down. Your
   own gold seat and the backs in front are in frame. The exact eye point is
   still what the sightline maths and tests use (DECISIONS 56). The FOV targets

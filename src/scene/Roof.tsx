@@ -177,7 +177,8 @@ export function Roof({ venue }: { venue: Venue }) {
     set(finRef.current, mats.fin, 1, 0, fastest);
     set(trussRef.current, mats.truss, 1, 0, fast);
     set(columnRef.current, mats.column, 1, 0, fast);
-    mats.edge.opacity = (0.08 + 0.55 * f) * (0.3 + 0.7 * look.power);
+    // No base level: up close a faint far roof edge read as a stray dashed line in the sky.
+    mats.edge.opacity = 0.6 * f * (0.3 + 0.7 * look.power);
   });
 
   useEffect(

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { actions, useAppState } from '../state/store.ts';
 import type { Venue } from '../venue/loadVenue.ts';
+import { DotList } from './DotList.tsx';
 import { categoryNote, priceText, seatSummary } from './format.ts';
 import { ArrowLeft, DragIcon, TicketIcon, WheelchairIcon } from './icons.tsx';
 import { strings } from './strings.ts';
@@ -21,42 +22,42 @@ export function SeatPanel({ venue }: { venue: Venue }) {
   return (
     <section className="ui-seatbar" aria-label={strings.panelLabel} key={summary.seatId}>
       <div className="ui-seatbar__info">
-        <p className="ui-seatbar__line">
-          <span className="ui-seatbar__dot" style={{ background: summary.tierColor }} aria-hidden />
-          <span>{summary.standName}</span>
-          <span className="ui-sep" aria-hidden>·</span>
-          <span>
-            {strings.fieldSector} <strong>{summary.code}</strong>
-          </span>
-          <span className="ui-sep" aria-hidden>·</span>
-          <span>
-            {strings.fieldRow} <strong>{summary.row}</strong>
-          </span>
-          <span className="ui-sep" aria-hidden>·</span>
-          <span>
-            {strings.fieldSeat} <strong>{summary.seat}</strong>
-          </span>
-          <span className="ui-sep" aria-hidden>·</span>
-          <strong className="ui-seatbar__price">{priceText(summary.price, summary.category)}</strong>
-        </p>
-        <p className="ui-seatbar__sub">
-          {summary.ringName}
-          {note && (
+        <DotList
+          className="ui-seatbar__line"
+          items={[
             <>
-              <span className="ui-sep" aria-hidden>·</span>
-              {summary.category === 'accessible' && <WheelchairIcon size={13} />} {note}
-            </>
-          )}
-          {summary.estimated && (
+              <span className="ui-seatbar__dot" style={{ background: summary.tierColor }} aria-hidden />
+              {summary.standName}
+            </>,
             <>
-              <span className="ui-sep" aria-hidden>·</span>
-              {strings.estimatedNote}
-            </>
-          )}
-          <span className="ui-seatbar__drag">
-            <DragIcon size={13} /> {strings.dragHint}
-          </span>
-        </p>
+              {strings.fieldSector} <strong>{summary.code}</strong>
+            </>,
+            <>
+              {strings.fieldRow} <strong>{summary.row}</strong>
+            </>,
+            <>
+              {strings.fieldSeat} <strong>{summary.seat}</strong>
+            </>,
+            <strong className="ui-seatbar__price">{priceText(summary.price, summary.category)}</strong>,
+          ]}
+        />
+        <DotList
+          className="ui-seatbar__sub"
+          items={[
+            summary.ringName,
+            note && (
+              <>
+                {summary.category === 'accessible' && <WheelchairIcon size={13} />} {note}
+              </>
+            ),
+            summary.estimated && strings.estimatedNote,
+          ]}
+          trailing={
+            <span className="ui-seatbar__drag">
+              <DragIcon size={13} /> {strings.dragHint}
+            </span>
+          }
+        />
       </div>
       <div className="ui-seatbar__actions">
         <button type="button" className="ui-btn ui-btn--gold" disabled={!forSale} onClick={() => actions.openCheckout()}>

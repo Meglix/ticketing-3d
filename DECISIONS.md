@@ -376,8 +376,8 @@ Each entry: **decision** — alternatives — why. Newest at the bottom.
     Press seats are never for sale.
 
 56. **Seat view is over the shoulder, not at the exact eye point:** 0.85 m
-    behind (0.3 m on a last row, against the back wall), 0.3 m higher, looking
-    along the seat's facing, 11° down. Alternative: the exact eye point (V1).
+    behind (0.3 m on a last row, against the back wall), 0.14 m higher, looking
+    along the seat's facing, 13° down (tuned in review round 1, entry 61). Alternative: the exact eye point (V1).
     Why: the brief wants your own seat edge, armrests and the backs in front in
     frame. From the eye point your own seat sits under and behind the lens and
     is invisible. The offset is small enough that the view of the pitch is the

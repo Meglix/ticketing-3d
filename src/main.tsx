@@ -1,3 +1,4 @@
+import './debug/capture.ts'; // first: in ?capture mode it replaces the clock before anything reads it
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App.tsx';
