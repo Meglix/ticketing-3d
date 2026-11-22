@@ -8,7 +8,15 @@ import { useSyncExternalStore } from 'react';
  * "what happens on a tap" live in one place.
  */
 
-export type View = 'overview' | 'seat';
+/**
+ * The three levels of the V2 flow:
+ *   overview ──tap sector──► sector (3/4 "focus" view, seats tappable) ──tap seat──► seat (first person)
+ * and back one level at a time.
+ */
+export type View = 'overview' | 'sector' | 'seat';
+
+/** Depth of a view in the flow (used by browser history). */
+export const viewDepth = (v: View): number => (v === 'overview' ? 0 : v === 'sector' ? 1 : 2);
 
 export interface AppState {
   /** Where the camera is, or is flying to. */
@@ -17,10 +25,12 @@ export interface AppState {
   inTransit: boolean;
   /** Sector code under the pointer (desktop hover). */
   hoveredSector: string | null;
-  /** Sector the user picked (null in the overview). */
+  /** Sector being focused (null in the overview). */
   selectedSector: string | null;
-  /** Seat id the camera sits on in the seat view. */
+  /** The chosen seat (gold): the camera sits on it in the seat view; kept when going back to the sector. */
   seatId: string | null;
+  /** Seat id under the pointer in the sector focus (desktop hover). */
+  hoveredSeat: string | null;
   checkoutOpen: boolean;
   /** True once the 3D scene has rendered its first frame (the UI shows a loader until then). */
   sceneReady: boolean;
@@ -36,6 +46,7 @@ const initialState: AppState = {
   hoveredSector: null,
   selectedSector: null,
   seatId: null,
+  hoveredSeat: null,
   checkoutOpen: false,
   sceneReady: false,
   sceneFailure: null,
@@ -73,18 +84,44 @@ export const actions = {
     set({ hoveredSector: code });
   },
 
+  hoverSeat(seatId: string | null): void {
+    set({ hoveredSeat: seatId });
+  },
+
   /**
-   * Fly to `seatId` in sector `code`. Safe to call at any time, including
-   * mid-flight: the camera rig re-targets from wherever the camera currently is.
+   * Fly to the 3/4 focus view of sector `code`. Safe at any time, including
+   * mid-flight: the camera rig re-targets from wherever the camera currently
+   * is. Coming back up from that sector's seat keeps the chosen (gold) seat.
    */
-  selectSector(code: string, seatId: string): void {
+  focusSector(code: string): void {
+    const keepSeat = state.selectedSector === code ? state.seatId : null;
+    set({
+      view: 'sector',
+      selectedSector: code,
+      seatId: keepSeat,
+      hoveredSeat: null,
+      inTransit: true,
+      checkoutOpen: false,
+    });
+  },
+
+  /** Choose a seat (it turns gold) and fly into it: first-person seat view. */
+  selectSeat(code: string, seatId: string): void {
     set({
       view: 'seat',
       selectedSector: code,
       seatId,
+      hoveredSeat: null,
+      hoveredSector: null,
       inTransit: true,
       checkoutOpen: false,
     });
+  },
+
+  /** One level up: seat → sector focus → overview. */
+  back(): void {
+    if (state.view === 'seat' && state.selectedSector) actions.focusSector(state.selectedSector);
+    else if (state.view !== 'overview') actions.goToOverview();
   },
 
   goToOverview(): void {
@@ -92,6 +129,7 @@ export const actions = {
       view: 'overview',
       selectedSector: null,
       seatId: null,
+      hoveredSeat: null,
       inTransit: true,
       checkoutOpen: false,
     });

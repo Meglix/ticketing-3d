@@ -1,7 +1,9 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import {
+  AdditiveBlending,
   BoxGeometry,
+  Color,
   DoubleSide,
   EdgesGeometry,
   type InstancedMesh,
@@ -16,18 +18,20 @@ import {
 import { frameAt, offsetLength, paramAtOffsetLength, pointAt } from '../geometry/roundedRect.ts';
 import type { Beam } from '../geometry/types.ts';
 import type { Venue } from '../venue/loadVenue.ts';
-import { overviewFactor, toBufferGeometry } from './meshData.ts';
+import { look } from './look.ts';
+import { toBufferGeometry } from './meshData.ts';
 import { PALETTE } from './palette.ts';
 
 /**
  * Roof skin (aluminium + translucent polycarbonate band), cantilever
  * trusses, columns and the facade with its vertical metal fins.
  *
- * The roof covers ~93 % of the seats, so in the overview it would hide the
- * sectors the user has to tap. Every frame, the camera height drives a single
- * "overview factor": high camera → roof and facade fade to a ghost (with a thin
- * outline so the architecture still reads), low camera → fully solid. None of
- * these meshes has pointer handlers, so they never block taps.
+ * The roof covers ~98 % of the seats (in plan), so in the overview it would
+ * hide the sectors the user has to tap. V2: driven by look.holo — far away the
+ * roof is a glowing wireframe over almost-transparent dark glass (the
+ * "luminous model"), up close it is solid dark aluminium with the trusses and
+ * facade fins catching the floodlight. None of these meshes has pointer
+ * handlers, so they never block taps.
  */
 
 const tmpObj = new Object3D();
@@ -94,32 +98,39 @@ export function Roof({ venue }: { venue: Venue }) {
 
   const mats = useMemo(() => {
     const roof = new MeshStandardMaterial({
-      color: PALETTE.roofSkin,
-      roughness: 0.42,
-      metalness: 0.3,
+      color: PALETTE.nightRoof,
+      roughness: 0.45,
+      metalness: 0.55,
       side: DoubleSide,
       transparent: true,
     });
     const poly = new MeshStandardMaterial({
-      color: PALETTE.polycarbonate,
-      roughness: 0.15,
+      color: '#a9c1d6',
+      roughness: 0.2,
       metalness: 0.0,
       side: DoubleSide,
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.35,
       depthWrite: false,
     });
     const facade = new MeshStandardMaterial({
-      color: PALETTE.facade,
-      roughness: 0.38,
-      metalness: 0.45,
+      color: PALETTE.nightFacade,
+      roughness: 0.5,
+      metalness: 0.5,
       side: DoubleSide,
       transparent: true,
     });
-    const fin = new MeshStandardMaterial({ color: PALETTE.facadeFin, roughness: 0.35, metalness: 0.5, transparent: true });
-    const truss = new MeshStandardMaterial({ color: PALETTE.steel, roughness: 0.5, metalness: 0.35, transparent: true });
-    const column = new MeshStandardMaterial({ color: PALETTE.column, roughness: 0.9, transparent: true });
-    const edge = new LineBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0, depthWrite: false });
+    const fin = new MeshStandardMaterial({ color: '#4a4b52', roughness: 0.4, metalness: 0.6, transparent: true });
+    const truss = new MeshStandardMaterial({ color: '#5a5f68', roughness: 0.5, metalness: 0.5, transparent: true });
+    const column = new MeshStandardMaterial({ color: '#34353a', roughness: 0.9, transparent: true });
+    const edge = new LineBasicMaterial({
+      color: new Color(PALETTE.holoLine).multiplyScalar(1.6),
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+      blending: AdditiveBlending,
+      toneMapped: false,
+    });
     return { roof, poly, facade, fin, truss, column, edge };
   }, []);
 
@@ -145,10 +156,11 @@ export function Roof({ venue }: { venue: Venue }) {
   // Many overlapping translucent parts (fins, trusses) would add up to a grey
   // veil, so those fade out completely and stop drawing.
   const last = useRef(-1);
-  useFrame(({ camera }) => {
-    const f = overviewFactor(camera.position.y);
-    if (Math.abs(f - last.current) < 0.002) return;
-    last.current = f;
+  useFrame(() => {
+    const f = look.holo;
+    const key = f + look.power * 7; // also re-run while the intro powers the lights up
+    if (Math.abs(key - last.current) < 0.002) return;
+    last.current = key;
     const ghost = f > 0.02;
     // Busy parts (fins ×3, trusses and columns ×2) fade faster so a camera in
     // mid-flight doesn't look through a curtain of half-transparent bars.
@@ -165,7 +177,7 @@ export function Roof({ venue }: { venue: Venue }) {
     set(finRef.current, mats.fin, 1, 0, fastest);
     set(trussRef.current, mats.truss, 1, 0, fast);
     set(columnRef.current, mats.column, 1, 0, fast);
-    mats.edge.opacity = 0.6 * f;
+    mats.edge.opacity = (0.08 + 0.55 * f) * (0.3 + 0.7 * look.power);
   });
 
   useEffect(

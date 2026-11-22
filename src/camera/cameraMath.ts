@@ -183,19 +183,19 @@ export const SEAT_LOOK_LIMITS = {
 };
 
 /**
- * Vertical fov for the seat view. We aim for ~80° of horizontal view (a
- * natural "what I see from my seat" width). On a landscape laptop that is
- * ~55° vertical. On a portrait phone it would be absurdly tall, so the
+ * Vertical fov for the seat view. We aim for ~90° of horizontal view (an
+ * immersive "what I see from my seat" width that also keeps your own seat in
+ * frame). On a landscape laptop that is ~64° vertical. On a portrait phone it would be absurdly tall, so the
  * vertical fov is capped at 78° and the user looks around by dragging.
  */
 export function seatFov(aspect: number): number {
-  const wantedHorizontal = deg(80);
+  const wantedHorizontal = deg(90);
   const vertical = 2 * Math.atan(Math.tan(wantedHorizontal / 2) / aspect);
   return clamp(toDeg(vertical), 50, 78);
 }
 
 /** Above this vertical fov the initial seat view is tilted down (see seatPose). */
-export const SEAT_TILT_FROM_FOV = 60;
+export const SEAT_TILT_FROM_FOV = 66;
 
 /** Downward tilt (radians) of the initial seat look for this screen shape; 0 on landscape screens. */
 export function seatTilt(aspect: number): number {
@@ -238,3 +238,45 @@ export function clampLook(base: LookAngles, look: LookAngles, limits = SEAT_LOOK
     pitch: clamp(look.pitch, limits.minPitch, limits.maxPitch),
   };
 }
+
+// ---------------------------------------------------------------------------
+// V2 seat view: "over the shoulder" so your own seat is in frame
+// ---------------------------------------------------------------------------
+
+/** How far behind the seat centre the V2 seat camera sits (m); 0.3 in a last row (back wall). */
+export const SEAT_VIEW_BACK = 0.62;
+export const SEAT_VIEW_BACK_LAST_ROW = 0.3;
+/** Extra height over the seated eye point (m): the camera looks over your own seat back. */
+export const SEAT_VIEW_LIFT = 0.25;
+/** Extra downward tilt of the initial look, so armrests and the rows in front are in frame. */
+export const SEAT_VIEW_DOWN = deg(9);
+
+/**
+ * The V2 seat-view camera. Like the reference, it sits just behind and above
+ * the seated eye point (0.62 m back, 0.25 m up), so the bottom of the frame
+ * shows your own seat back and armrests and the backs of the seats in front.
+ * Yaw still centres on `focus` (look-around limits are unchanged). The exact
+ * eye point (seatPose) is what the sightline maths uses.
+ */
+export function seatViewPose(
+  seat: { position: Vec3; facing: { x: number; z: number } },
+  eyeHeight: number,
+  aspect: number,
+  lastRow = false,
+  focus: Vec3 = vec(0, 0, 0),
+): CameraPose {
+  const back = lastRow ? SEAT_VIEW_BACK_LAST_ROW : SEAT_VIEW_BACK;
+  const eye = vec(
+    seat.position.x - seat.facing.x * back,
+    seat.position.y + eyeHeight + SEAT_VIEW_LIFT,
+    seat.position.z - seat.facing.z * back,
+  );
+  const fov = seatFov(aspect);
+  const base = anglesOf(eye, focus);
+  const look = {
+    yaw: base.yaw,
+    pitch: Math.max(SEAT_LOOK_LIMITS.minPitch, base.pitch - SEAT_VIEW_DOWN - seatTilt(aspect)),
+  };
+  return { position: eye, target: add(eye, scale(directionOf(look), length(sub(focus, eye)))), fov };
+}
+

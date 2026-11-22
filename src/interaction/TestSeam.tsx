@@ -1,5 +1,7 @@
 import { useThree } from '@react-three/fiber';
 import { useEffect } from 'react';
+import { availabilityFor, SOLD } from '../demo/availability.ts';
+import { pickedSeatIndex, PICK_BOX } from './seatPicking.ts';
 import { Raycaster, Vector2, Vector3 } from 'three';
 import type { CameraPose } from '../camera/cameraMath.ts';
 import { appStore, type AppState } from '../state/store.ts';
@@ -25,6 +27,10 @@ import { sectorAtPoint } from './hitSector.ts';
 
 export interface ClujDemoSeam {
   sectorScreenPoint(code: string): { x: number; y: number } | null;
+  /** Screen point where a real tap picks this seat (sector focus), or null. */
+  seatScreenPoint(seatId: string): { x: number; y: number } | null;
+  /** A free seat near the middle of a sector (deterministic demo availability). */
+  availableSeat(code: string): string | null;
   state(): AppState;
   cameraIdle(): boolean;
   cameraMode(): string;
@@ -92,6 +98,29 @@ export function TestSeam({
           if (!hit || sectorAtPoint(venue, hit.point) !== code) continue; // something else is in front
           return { x, y };
         }
+        return null;
+      },
+      seatScreenPoint(seatId) {
+        const seat = venue.seatById.get(seatId);
+        if (!seat) return null;
+        const rect = gl.domElement.getBoundingClientRect();
+        // The visible top of the seat (as in seatPicking.test.ts).
+        const y = seat.position.y + PICK_BOX.lift + PICK_BOX.height / 2 - 0.08;
+        const ndc = new Vector3(seat.position.x, y, seat.position.z).project(camera);
+        if (ndc.z < -1 || ndc.z > 1 || Math.abs(ndc.x) > 0.96 || Math.abs(ndc.y) > 0.96) return null;
+        const px = rect.left + ((ndc.x + 1) / 2) * rect.width;
+        const py = rect.top + ((1 - ndc.y) / 2) * rect.height;
+        if (document.elementFromPoint(px, py) !== gl.domElement) return null; // covered by the UI
+        raycaster.setFromCamera(new Vector2(ndc.x, ndc.y), camera);
+        const hit = raycaster.intersectObjects(internal.interaction, false)[0];
+        const sector = venue.sectorByCode.get(seat.sector);
+        if (!hit || !sector || pickedSeatIndex(sector, hit.instanceId) === null) return null;
+        if (venue.manifest.seats[pickedSeatIndex(sector, hit.instanceId)!]!.id !== seatId) return null;
+        return { x: px, y: py };
+      },
+      availableSeat(code) {
+        const sold = availabilityFor(venue.manifest);
+        for (const index of candidateSeats(venue, code)) if (sold[index] !== SOLD) return venue.manifest.seats[index]!.id;
         return null;
       },
       state: () => appStore.get(),

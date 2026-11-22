@@ -145,13 +145,13 @@ describe('seat view', () => {
     expect(pose.target).toEqual(vec(0, 0, 0));
   });
 
-  it('uses ~55° vertical fov on a laptop and a capped wider fov on a phone', () => {
-    expect(seatFov(1440 / 900)).toBeGreaterThan(50);
-    expect(seatFov(1440 / 900)).toBeLessThan(60);
+  it('uses ~64° vertical fov on a laptop and a capped wider fov on a phone', () => {
+    expect(seatFov(1440 / 900)).toBeGreaterThan(60);
+    expect(seatFov(1440 / 900)).toBeLessThan(66);
     expect(seatFov(390 / 844)).toBe(78);
-    // Horizontal coverage on a laptop is ~80°.
+    // Horizontal coverage on a laptop is ~90°.
     const h = 2 * Math.atan(Math.tan(deg(seatFov(1.6)) / 2) * 1.6);
-    expect((h * 180) / Math.PI).toBeCloseTo(80, 0);
+    expect((h * 180) / Math.PI).toBeCloseTo(90, 0);
   });
 
   it('clamps look-around to ±75° yaw and −50°…+20° pitch', () => {

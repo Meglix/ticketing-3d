@@ -29,4 +29,21 @@ export const PALETTE = {
   screenFrame: '#1d2430',
   /** Colour other sectors' seats are pulled towards while a sector is selected. */
   dimTarget: '#b3b7bd',
+
+  // --- V2 night look ---------------------------------------------------------
+  /** Concrete in the luminous overview: nearly black, the edges carry the shape. */
+  holoConcrete: '#06080d',
+  /** Concrete close up at night (lit by the floodlights). */
+  nightConcrete: '#4a4a4c',
+  /** Cool glow of the structure lines. */
+  holoLine: '#8fb4ff',
+  /** Night roof (dark aluminium) and facade. */
+  nightRoof: '#2b2e34',
+  nightFacade: '#24252a',
+  /** Seats that are sold (sector focus). */
+  sold: '#2a2e36',
+  /** The selected seat. */
+  gold: '#f5c542',
+  /** Warm LED accents (fascia boards, ribbons). */
+  led: '#ffcf8a',
 } as const;

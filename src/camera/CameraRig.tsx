@@ -22,8 +22,8 @@ import {
   overviewPose,
   scale,
   seatFov,
-  seatPose,
   seatTilt,
+  seatViewPose,
   sub,
   add,
   vec,
@@ -32,7 +32,9 @@ import {
   type LookAngles,
   type OverviewOrbit,
 } from './cameraMath.ts';
+import { INTRO_SECONDS, look, skipIntro } from '../scene/look.ts';
 import { flightEnvelope, planFlight, type Flight } from './flight.ts';
+import { sectorFocusPose } from './focus.ts';
 import { framingOutline } from './framing.ts';
 
 /**
@@ -50,15 +52,16 @@ import { framingOutline } from './framing.ts';
  *   camera never re-renders React.
  */
 
-const FLIGHT_SECONDS = 1.5;
-const INTRO_SECONDS = 2.2;
+/** Flight durations (s): between levels, and the cinematic dive into a seat. */
+const FLIGHT_SECONDS = 1.6;
+const SEAT_FLIGHT_SECONDS = 2.2;
 /** A pointer that moves less than this (CSS px) is a tap, not a drag. Same threshold as the sector handlers. */
 export const TAP_SLOP_PX = 6;
 const ORBIT_SPEED = 0.005; // rad per px
 const TILT_SPEED = 0.004; // rad per px
 const ORIGIN = vec(0, 0, 0);
 
-type Mode = 'intro' | 'overview' | 'flying' | 'seat';
+type Mode = 'intro' | 'overview' | 'flying' | 'sector' | 'seat';
 
 interface RigState {
   mode: Mode;
@@ -66,8 +69,8 @@ interface RigState {
   goalKey: string;
   flight: Flight | null;
   flightStart: number;
-  flightGoal: 'overview' | 'seat';
-  introStart: number;
+  flightGoal: 'overview' | 'sector' | 'seat';
+  flightSeconds: number;
   introFrom: OverviewOrbit;
   orbit: OverviewOrbit;
   aspect: number;
@@ -93,12 +96,19 @@ function lerpOrbit(a: OverviewOrbit, b: OverviewOrbit, t: number): OverviewOrbit
   };
 }
 
+/** Where the cinematic intro starts: far out, lower, swung ~140° around the bowl. */
 function introOrbit(orbit: OverviewOrbit): OverviewOrbit {
   return {
-    azimuth: orbit.azimuth + deg(55),
-    elevation: Math.min(OVERVIEW_LIMITS.maxElevation, orbit.elevation + deg(16)),
-    zoom: orbit.zoom * 1.3,
+    azimuth: orbit.azimuth - deg(140),
+    elevation: Math.max(OVERVIEW_LIMITS.minElevation, orbit.elevation - deg(18)),
+    zoom: orbit.zoom * 1.7,
   };
+}
+
+/** Intro easing: smootherstep — gentle start, long soft settle. */
+function introEase(t: number): number {
+  const x = clamp(t, 0, 1);
+  return x * x * x * (x * (6 * x - 15) + 10);
 }
 
 const prefersReducedMotion = (): boolean =>
@@ -110,6 +120,14 @@ export function CameraRig({ venue }: { venue: Venue }) {
   const env = useMemo(() => flightEnvelope(venue.config), [venue]);
   const outline = useMemo(() => framingOutline(venue), [venue]);
 
+  /** Last row number per sector (the seat camera sits closer to its seat there: back wall). */
+  const lastRowOf = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const st of venue.config.stands)
+      for (const ring of st.rings) for (const sec of ring.sectors) m.set(sec.code, sec.rows[sec.rows.length - 1]!.row);
+    return m;
+  }, [venue]);
+
   const rig = useRef<RigState | null>(null);
   if (rig.current === null) {
     const aspect = typeof window !== 'undefined' ? window.innerWidth / Math.max(1, window.innerHeight) : 1.6;
@@ -120,7 +138,7 @@ export function CameraRig({ venue }: { venue: Venue }) {
       flight: null,
       flightStart: 0,
       flightGoal: 'overview',
-      introStart: -1,
+      flightSeconds: FLIGHT_SECONDS,
       introFrom: introOrbit(orbit),
       orbit,
       aspect,
@@ -133,6 +151,10 @@ export function CameraRig({ venue }: { venue: Venue }) {
       dragging: false,
     };
   }
+
+  useEffect(() => {
+    if (rig.current?.mode === 'overview') skipIntro(); // reduced motion: no intro
+  }, []);
 
   // ------------------------------------------------------------------------
   // Input: orbit / look / zoom on the canvas element, Escape on the window.
@@ -149,13 +171,15 @@ export function CameraRig({ venue }: { venue: Venue }) {
       const [a, b] = [...pointers.values()];
       return a && b ? Math.hypot(a.x - b.x, a.y - b.y) : 1;
     };
-    /** Stop the intro where it is and hand control to the user. */
+    /** Skip the intro: lights snap on, the camera eases into the overview. */
     const endIntro = (): void => {
       if (r.mode !== 'intro') return;
+      skipIntro();
       r.mode = 'overview';
     };
 
     const onDown = (e: PointerEvent): void => {
+      endIntro(); // a tap or click anywhere skips the intro
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pointers.size === 1) {
         downAt = { x: e.clientX, y: e.clientY };
@@ -232,8 +256,8 @@ export function CameraRig({ venue }: { venue: Venue }) {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key !== 'Escape') return;
       const s = appStore.get();
-      if (s.checkoutOpen || s.view !== 'seat') return;
-      actions.goToOverview();
+      if (s.checkoutOpen || s.view === 'overview') return;
+      actions.back(); // seat → sector → overview
     };
 
     el.addEventListener('pointerdown', onDown);
@@ -286,22 +310,36 @@ export function CameraRig({ venue }: { venue: Venue }) {
 
     // A new destination from the store → fly there from wherever we are.
     const s = appStore.get();
-    const key = s.view === 'seat' && s.seatId ? `seat:${s.seatId}` : 'overview';
+    const key =
+      s.view === 'seat' && s.seatId
+        ? `seat:${s.seatId}`
+        : s.view === 'sector' && s.selectedSector
+          ? `sector:${s.selectedSector}`
+          : 'overview';
     if (key !== r.goalKey) {
       r.goalKey = key;
       let goal: CameraPose;
+      r.flightSeconds = FLIGHT_SECONDS;
       if (key === 'overview') {
         goal = overviewPose(outline, aspect, r.orbit);
         r.flightGoal = 'overview';
+      } else if (key.startsWith('sector:')) {
+        if (!venue.sectorByCode.has(s.selectedSector!)) {
+          actions.goToOverview(); // unknown sector: fail safe
+          return;
+        }
+        goal = sectorFocusPose(venue, s.selectedSector!, aspect);
+        r.flightGoal = 'sector';
       } else {
         const seat = venue.seatById.get(s.seatId!);
         if (!seat) {
           actions.goToOverview(); // unknown seat id: fail safe, back to the overview
           return;
         }
-        goal = seatPose(seat.position, venue.config.eyeHeight, aspect, ORIGIN);
+        goal = seatViewPose(seat, venue.config.eyeHeight, aspect, seat.row === lastRowOf.get(seat.sector), ORIGIN);
         r.goalTilt = seatTilt(aspect);
         r.flightGoal = 'seat';
+        r.flightSeconds = SEAT_FLIGHT_SECONDS;
       }
       const from: CameraPose = { position: toVec(cam.position), target: r.target, fov: cam.fov };
       r.flight = planFlight(env, from, goal);
@@ -311,19 +349,21 @@ export function CameraRig({ venue }: { venue: Venue }) {
 
     switch (r.mode) {
       case 'intro': {
-        if (r.introStart < 0) r.introStart = now;
-        const t = (now - r.introStart) / INTRO_SECONDS;
-        apply(overviewPose(outline, aspect, lerpOrbit(r.introFrom, r.orbit, easeInOutCubic(t))));
+        // The intro clock lives in `look` (the lights read the same clock).
+        const t = look.intro / INTRO_SECONDS;
+        apply(overviewPose(outline, aspect, lerpOrbit(r.introFrom, r.orbit, introEase(t))));
         if (t >= 1) r.mode = 'overview';
         break;
       }
       case 'flying': {
-        const t = (now - r.flightStart) / FLIGHT_SECONDS;
+        const t = (now - r.flightStart) / r.flightSeconds;
         const pose = r.flight!.sample(easeInOutCubic(t));
         apply(pose);
         if (t >= 1) {
           r.flight = null;
-          if (r.flightGoal === 'seat') {
+          if (r.flightGoal === 'sector') {
+            r.mode = 'sector';
+          } else if (r.flightGoal === 'seat') {
             r.mode = 'seat';
             // Limits centre on the pitch centre; the initial look is the flight's
             // final target (tilted down on portrait screens, see seatPose).
@@ -342,6 +382,19 @@ export function CameraRig({ venue }: { venue: Venue }) {
         // Follow the (user-controlled) orbit with a little damping.
         const goal = overviewPose(outline, aspect, r.orbit);
         const k = 1 - Math.exp(-delta * 10);
+        apply({
+          position: lerp(toVec(cam.position), goal.position, k),
+          target: lerp(r.target, goal.target, k),
+          fov: lerpNumber(cam.fov, goal.fov, k),
+        });
+        break;
+      }
+      case 'sector': {
+        // Hold the 3/4 focus view (re-framed if the screen shape changes).
+        const code = appStore.get().selectedSector;
+        if (!code) break;
+        const goal = sectorFocusPose(venue, code, aspect);
+        const k = 1 - Math.exp(-delta * 8);
         apply({
           position: lerp(toVec(cam.position), goal.position, k),
           target: lerp(r.target, goal.target, k),
@@ -368,7 +421,7 @@ export function CameraRig({ venue }: { venue: Venue }) {
 
   const seamHooks = useMemo(
     () => ({
-      isCameraIdle: () => rig.current!.mode === 'overview' || rig.current!.mode === 'seat',
+      isCameraIdle: () => ['overview', 'sector', 'seat'].includes(rig.current!.mode),
       cameraMode: () => rig.current!.mode,
       cameraPose: (): CameraPose => ({ position: toVec(camera.position), target: rig.current!.target, fov: camera.fov }),
     }),

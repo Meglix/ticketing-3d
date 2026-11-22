@@ -9,35 +9,34 @@ import {
   InstancedBufferAttribute,
   type InstancedMesh,
   Matrix4,
+  type Mesh,
   MeshStandardMaterial,
-  Quaternion,
-  Vector3,
+  type PointLight,
 } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { availabilityFor, SOLD } from '../demo/availability.ts';
+import { seatMatrix } from '../interaction/seatPicking.ts';
 import { useAppState } from '../state/store.ts';
 import type { Venue } from '../venue/loadVenue.ts';
+import { look } from './look.ts';
 import { PALETTE } from './palette.ts';
 
 /**
- * All seats of the venue in ONE InstancedMesh (one draw call for 30k seats).
+ * All 30,335 seats, instanced, in three levels of detail:
  *
- * Geometry: a seat pan and a backrest (two open-bottom boxes, 20 triangles). Local +z is
- * the direction the spectator faces, so the backrest sits at −z, towards the
- * back of the stand.
+ *   far    4-triangle seat (pan + back as two quads)    camera > 140 m away
+ *   near   20-triangle seat (pan + backrest boxes)       otherwise
+ *   detail ~70-triangle seat (pan, back, armrest, leg)   the focused sector only
  *
- * Colour: the sector's price-tier colour. Hover brightens a sector. Selection
- * keeps the chosen sector in full colour and turns every other sector a
- * neutral grey (the real seats are grey, so the seat view reads naturally).
- * Colours are only
- * rewritten when hover/selection changes, and only for the sectors whose
- * colour actually changed (uploaded as partial buffer ranges).
+ * far/near share ONE matrix buffer and ONE colour buffer; the focused
+ * sector's seats are hidden there (zero matrices) and drawn by the detail
+ * mesh instead. The chosen seat and the hovered seat get their own meshes so
+ * they can glow (gold) without affecting the others.
  *
- * Level of detail: in the overview a seat is a few pixels wide, so a second
- * InstancedMesh draws each seat as two double-sided quads (4 triangles
- * instead of 20). It shares the SAME instance matrix and colour buffers, so
- * there is no extra memory or upload; only the visible mesh switches, by
- * camera distance from the centre (no visible pop: at the switch distance a
- * seat is ~2 px). This cuts the overview from ~650k to ~165k triangles.
+ * Colour = state: overview → price tier; focused sector → available (tier),
+ * sold (dark grey), hovered (bright), chosen (gold); other sectors → dimmed.
+ * In the luminous overview the seats also EMIT their colour (shader patch
+ * below), so they read as fine points of light; up close they are lit.
  */
 
 /** A box without its bottom face (never visible): 10 triangles instead of 12. */
@@ -50,26 +49,28 @@ function openBottomBox(w: number, h: number, d: number): BoxGeometry {
   return box;
 }
 
-function makeSeatGeometry() {
-  const pan = openBottomBox(0.44, 0.07, 0.4);
-  pan.translate(0, 0.44, 0.03);
-  const back = openBottomBox(0.44, 0.42, 0.06);
-  back.rotateX(-0.14); // leaning back slightly
-  back.translate(0, 0.68, -0.18);
-  const merged = mergeGeometries([pan, back]);
-  pan.dispose();
-  back.dispose();
+function merge(parts: BufferGeometry[]): BufferGeometry {
+  const merged = mergeGeometries(parts.map((p) => (p.index ? p.toNonIndexed() : p)));
+  parts.forEach((p) => p.dispose());
   if (!merged) throw new Error('Seat geometry merge failed');
   return merged;
 }
 
-/** Far LOD: the pan's top and the backrest's front as two quads (4 triangles), drawn double-sided. */
-function makeFarSeatGeometry(): BufferGeometry {
-  const w = 0.22; // half width
-  // pan top (y 0.475, z −0.17…0.23) and backrest (tilted, from the pan's back up to 0.88 m)
+function makeNearSeat(): BufferGeometry {
+  const pan = openBottomBox(0.44, 0.07, 0.4);
+  pan.translate(0, 0.44, 0.03);
+  const back = openBottomBox(0.44, 0.42, 0.06);
+  back.rotateX(-0.14);
+  back.translate(0, 0.68, -0.18);
+  return merge([pan, back]);
+}
+
+/** Far LOD: the pan's top and the backrest's front as two quads, drawn double-sided. */
+function makeFarSeat(): BufferGeometry {
+  const w = 0.22;
   const v = [
-    -w, 0.475, 0.23,  w, 0.475, 0.23,  w, 0.475, -0.17,  -w, 0.475, -0.17,
-    -w, 0.475, -0.17,  w, 0.475, -0.17,  w, 0.89, -0.23,  -w, 0.89, -0.23,
+    -w, 0.475, 0.23, w, 0.475, 0.23, w, 0.475, -0.17, -w, 0.475, -0.17,
+    -w, 0.475, -0.17, w, 0.475, -0.17, w, 0.89, -0.23, -w, 0.89, -0.23,
   ];
   const g = new BufferGeometry();
   g.setAttribute('position', new Float32BufferAttribute(v, 3));
@@ -78,112 +79,218 @@ function makeFarSeatGeometry(): BufferGeometry {
   return g;
 }
 
+/** Detail LOD: shaped pan, two-part backrest, one armrest (shared with the neighbour), pedestal. */
+function makeDetailSeat(): BufferGeometry {
+  const pan = new BoxGeometry(0.44, 0.075, 0.41);
+  pan.translate(0, 0.445, 0.035);
+  const lip = new BoxGeometry(0.44, 0.05, 0.06);
+  lip.rotateX(0.5);
+  lip.translate(0, 0.43, 0.245);
+  const back = new BoxGeometry(0.44, 0.36, 0.055);
+  back.rotateX(-0.16);
+  back.translate(0, 0.66, -0.175);
+  const head = new BoxGeometry(0.42, 0.13, 0.05);
+  head.rotateX(-0.22);
+  head.translate(0, 0.89, -0.215);
+  const arm = new BoxGeometry(0.045, 0.035, 0.36);
+  arm.translate(0.245, 0.64, 0.0);
+  const armPost = new BoxGeometry(0.035, 0.22, 0.035);
+  armPost.translate(0.245, 0.52, -0.13);
+  const leg = new BoxGeometry(0.06, 0.4, 0.06);
+  leg.translate(0, 0.2, -0.06);
+  return merge([pan, lip, back, head, arm, armPost, leg]);
+}
+
+/** Make instance colours also emissive, scaled by a shared uniform (the luminous look). */
+function glowMaterial(glow: { value: number }, opts: ConstructorParameters<typeof MeshStandardMaterial>[0]) {
+  const m = new MeshStandardMaterial(opts);
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.uGlow = glow;
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nuniform float uGlow;')
+      .replace(
+        '#include <emissivemap_fragment>',
+        '#include <emissivemap_fragment>\n#if defined( USE_INSTANCING_COLOR ) || defined( USE_COLOR )\n totalEmissiveRadiance += vColor.rgb * uGlow;\n#endif',
+      );
+  };
+  return m;
+}
+
 /** Camera distance from the centre spot above which the far LOD is drawn. */
 const FAR_LOD_DISTANCE = 140;
+const ZERO = new Matrix4().makeScale(0, 0, 0);
 
 const WHITE = new Color('#ffffff');
-const DIM = new Color(PALETTE.dimTarget);
+const SOLD_COLOR = new Color(PALETTE.sold);
+const GOLD = new Color(PALETTE.gold);
+const DIM = new Color('#11141b');
 
 export function Seats({ venue }: { venue: Venue }) {
-  const meshRef = useRef<InstancedMesh>(null);
+  const nearRef = useRef<InstancedMesh>(null);
   const farRef = useRef<InstancedMesh>(null);
+  const detailRef = useRef<InstancedMesh>(null);
+  const goldRef = useRef<Mesh>(null);
+  const goldLightRef = useRef<PointLight>(null);
+  const hoverRef = useRef<Mesh>(null);
   const { seats, sectors } = venue.manifest;
   const count = seats.length;
+  const sold = useMemo(() => availabilityFor(venue.manifest), [venue]);
+  const maxSector = useMemo(() => Math.max(...sectors.map((s) => s.seatEnd - s.seatStart)), [sectors]);
 
-  const geometry = useMemo(makeSeatGeometry, []);
-  const farGeometry = useMemo(makeFarSeatGeometry, []);
-  const material = useMemo(() => new MeshStandardMaterial({ roughness: 0.55, metalness: 0.0 }), []);
-  const farMaterial = useMemo(
-    () => new MeshStandardMaterial({ roughness: 0.55, metalness: 0.0, side: DoubleSide }),
-    [],
+  const geo = useMemo(() => ({ near: makeNearSeat(), far: makeFarSeat(), detail: makeDetailSeat() }), []);
+  const glow = useMemo(() => ({ value: 0.6 }), []);
+  const detailGlow = useMemo(() => ({ value: 0.12 }), []);
+  const mats = useMemo(
+    () => ({
+      near: glowMaterial(glow, { roughness: 0.55, metalness: 0 }),
+      far: glowMaterial(glow, { roughness: 0.55, metalness: 0, side: DoubleSide }),
+      detail: glowMaterial(detailGlow, { roughness: 0.48, metalness: 0.05 }),
+      gold: new MeshStandardMaterial({ color: GOLD, emissive: GOLD, emissiveIntensity: 2.2, roughness: 0.35, metalness: 0.3 }),
+      hover: new MeshStandardMaterial({ color: '#dfe9ff', emissive: '#9ec2ff', emissiveIntensity: 1.6, roughness: 0.4 }),
+    }),
+    [glow, detailGlow],
   );
   const colors = useMemo(() => new InstancedBufferAttribute(new Float32Array(count * 3), 3), [count]);
-  const tierColor = useMemo(() => {
-    const map = new Map<string, Color>();
-    for (const tier of venue.config.priceTiers) map.set(tier.id, new Color(tier.color));
-    return map;
-  }, [venue]);
-  /** Last colour written per sector (hex), to upload only what changed. */
-  const applied = useRef(new Map<string, number>());
-
-  // Instance matrices: computed once per venue.
-  useLayoutEffect(() => {
-    const mesh = meshRef.current;
-    if (!mesh) return;
+  const detailColors = useMemo(() => new InstancedBufferAttribute(new Float32Array(maxSector * 3), 3), [maxSector]);
+  /** Every seat's world matrix (16 floats each), kept to restore hidden ranges. */
+  const baseMatrices = useMemo(() => {
+    const out = new Float32Array(count * 16);
     const m = new Matrix4();
-    const q = new Quaternion();
-    const p = new Vector3();
-    const s = new Vector3(1, 1, 1);
-    const up = new Vector3(0, 1, 0);
-    for (let i = 0; i < count; i++) {
-      const seat = seats[i]!;
-      q.setFromAxisAngle(up, Math.atan2(seat.facing.x, seat.facing.z));
-      p.set(seat.position.x, seat.position.y, seat.position.z);
-      m.compose(p, q, s);
-      mesh.setMatrixAt(i, m);
-    }
-    mesh.instanceMatrix.needsUpdate = true;
-    mesh.instanceColor = colors;
-    mesh.computeBoundingSphere();
+    seats.forEach((seat, i) => seatMatrix(seat, m).toArray(out, i * 16));
+    return out;
+  }, [seats, count]);
+  const tierColor = useMemo(() => new Map(venue.config.priceTiers.map((t) => [t.id, new Color(t.color)])), [venue]);
+
+  const view = useAppState((s) => s.view);
+  const focus = useAppState((s) => (s.view === 'overview' ? null : s.selectedSector));
+  const seatId = useAppState((s) => s.seatId);
+  const hoveredSeat = useAppState((s) => s.hoveredSeat);
+  const hoveredSector = useAppState((s) => s.hoveredSector);
+
+  // Matrices: written once; the far mesh shares the near mesh's buffers.
+  useLayoutEffect(() => {
+    const near = nearRef.current;
     const far = farRef.current;
-    if (far) {
-      far.instanceMatrix = mesh.instanceMatrix; // shared buffers: one upload, two meshes
-      far.instanceColor = colors;
-      far.computeBoundingSphere();
+    if (!near || !far) return;
+    (near.instanceMatrix.array as Float32Array).set(baseMatrices);
+    near.instanceMatrix.needsUpdate = true;
+    near.instanceColor = colors;
+    far.instanceMatrix = near.instanceMatrix;
+    far.instanceColor = colors;
+    near.computeBoundingSphere();
+    far.computeBoundingSphere();
+  }, [baseMatrices, colors]);
+
+  // The focused sector moves from the shared meshes to the detail mesh.
+  const focusInfo = focus ? venue.sectorByCode.get(focus) ?? null : null;
+  useLayoutEffect(() => {
+    const near = nearRef.current;
+    const detail = detailRef.current;
+    if (!near || !detail || !focusInfo) {
+      if (detail) detail.count = 0;
+      return;
     }
-    applied.current.clear();
-  }, [count, seats, colors]);
+    const arr = near.instanceMatrix.array as Float32Array;
+    const { seatStart: a, seatEnd: b } = focusInfo;
+    for (let i = a; i < b; i++) ZERO.toArray(arr, i * 16);
+    near.instanceMatrix.clearUpdateRanges();
+    near.instanceMatrix.addUpdateRange(a * 16, (b - a) * 16);
+    near.instanceMatrix.needsUpdate = true;
+    (detail.instanceMatrix.array as Float32Array).set(baseMatrices.subarray(a * 16, b * 16));
+    detail.count = b - a;
+    detail.instanceMatrix.needsUpdate = true;
+    detail.instanceColor = detailColors;
+    detail.computeBoundingSphere();
+    return () => {
+      arr.set(baseMatrices.subarray(a * 16, b * 16), a * 16);
+      near.instanceMatrix.clearUpdateRanges();
+      near.instanceMatrix.addUpdateRange(a * 16, (b - a) * 16);
+      near.instanceMatrix.needsUpdate = true;
+    };
+  }, [focusInfo, baseMatrices, detailColors]);
 
-  // Switch LOD by camera distance (cheap: one comparison per frame).
-  useFrame(({ camera }) => {
-    const far = camera.position.length() > FAR_LOD_DISTANCE;
-    if (meshRef.current) meshRef.current.visible = !far;
-    if (farRef.current) farRef.current.visible = far;
-  });
-
-  const hovered = useAppState((st) => st.hoveredSector);
-  const selected = useAppState((st) => st.selectedSector);
-
+  // Colours from state (cheap: one pass over 30k seats, only when the state changes).
   useLayoutEffect(() => {
     const arr = colors.array as Float32Array;
     const c = new Color();
-    colors.clearUpdateRanges();
-    let changed = 0;
     for (const sector of sectors) {
-      c.copy(tierColor.get(sector.tierId) ?? WHITE);
-      if (selected !== null) {
-        if (sector.code === selected) c.lerp(WHITE, 0.08);
-        else c.lerp(DIM, sector.code === hovered ? 0.45 : 0.8);
-      }
-      if (sector.code === hovered && sector.code !== selected) c.lerp(WHITE, 0.5);
-      const hex = c.getHex();
-      if (applied.current.get(sector.code) === hex) continue;
-      applied.current.set(sector.code, hex);
+      const base = tierColor.get(sector.tierId) ?? WHITE;
+      const focused = sector.code === focus;
       for (let i = sector.seatStart; i < sector.seatEnd; i++) {
+        if (view === 'overview') {
+          c.copy(base);
+          if (sector.code === hoveredSector) c.lerp(WHITE, 0.45);
+        } else if (focused) {
+          const id = seats[i]!.id;
+          if (id === seatId) c.copy(GOLD);
+          else if (sold[i] === SOLD) c.copy(SOLD_COLOR);
+          else if (id === hoveredSeat) c.copy(base).lerp(WHITE, 0.6);
+          else c.copy(base).lerp(WHITE, 0.06);
+        } else {
+          c.copy(base).lerp(DIM, sector.code === hoveredSector ? 0.35 : 0.62);
+        }
         arr[i * 3] = c.r;
         arr[i * 3 + 1] = c.g;
         arr[i * 3 + 2] = c.b;
       }
-      colors.addUpdateRange(sector.seatStart * 3, (sector.seatEnd - sector.seatStart) * 3);
-      changed++;
     }
-    if (changed > 0) colors.needsUpdate = true;
-  }, [hovered, selected, sectors, colors, tierColor]);
+    colors.clearUpdateRanges();
+    colors.needsUpdate = true;
+    if (focusInfo) {
+      const d = detailColors.array as Float32Array;
+      d.set(arr.subarray(focusInfo.seatStart * 3, focusInfo.seatEnd * 3));
+      detailColors.clearUpdateRanges();
+      detailColors.needsUpdate = true;
+    }
+  }, [view, focus, focusInfo, seatId, hoveredSeat, hoveredSector, sectors, seats, sold, tierColor, colors, detailColors]);
+
+  // The chosen (gold) seat and the hovered seat: own meshes on top of the detail one.
+  const chosen = seatId ? venue.seatById.get(seatId) : undefined;
+  const hovered = hoveredSeat && hoveredSeat !== seatId ? venue.seatById.get(hoveredSeat) : undefined;
+  useLayoutEffect(() => {
+    const place = (mesh: Mesh | null, seat: typeof chosen, scale: number) => {
+      if (!mesh) return;
+      mesh.visible = !!seat && view !== 'overview';
+      if (!seat) return;
+      seatMatrix(seat, mesh.matrix);
+      if (scale !== 1) mesh.matrix.multiply(new Matrix4().makeScale(scale, scale, scale));
+      mesh.matrixAutoUpdate = false;
+      mesh.matrixWorldNeedsUpdate = true;
+    };
+    place(goldRef.current, chosen, 1.015);
+    place(hoverRef.current, hovered, 1.03);
+    const light = goldLightRef.current;
+    if (light) {
+      light.visible = !!chosen && view !== 'overview';
+      if (chosen) light.position.set(chosen.position.x, chosen.position.y + 1.3, chosen.position.z);
+    }
+  }, [chosen, hovered, view]);
+
+  useFrame(({ camera }) => {
+    const far = camera.position.length() > FAR_LOD_DISTANCE;
+    if (nearRef.current) nearRef.current.visible = !far;
+    if (farRef.current) farRef.current.visible = far;
+    // Luminous overview: seats emit their colour; up close they are lit instead.
+    glow.value = (0.1 + 0.9 * look.holo) * (0.35 + 0.65 * look.power);
+    mats.gold.emissiveIntensity = 1.8 + 0.6 * Math.sin(performance.now() / 380);
+  });
 
   useLayoutEffect(
     () => () => {
-      geometry.dispose();
-      material.dispose();
-      farGeometry.dispose();
-      farMaterial.dispose();
+      Object.values(geo).forEach((g) => g.dispose());
+      Object.values(mats).forEach((m) => m.dispose());
     },
-    [geometry, material, farGeometry, farMaterial],
+    [geo, mats],
   );
 
   return (
     <>
-      <instancedMesh ref={meshRef} args={[geometry, material, count]} frustumCulled={false} />
-      <instancedMesh ref={farRef} args={[farGeometry, farMaterial, count]} frustumCulled={false} visible={false} />
+      <instancedMesh ref={nearRef} args={[geo.near, mats.near, count]} frustumCulled={false} />
+      <instancedMesh ref={farRef} args={[geo.far, mats.far, count]} frustumCulled={false} visible={false} />
+      <instancedMesh ref={detailRef} args={[geo.detail, mats.detail, maxSector]} frustumCulled={false} />
+      <mesh ref={goldRef} geometry={geo.detail} material={mats.gold} visible={false} />
+      <mesh ref={hoverRef} geometry={geo.detail} material={mats.hover} visible={false} />
+      <pointLight ref={goldLightRef} color={PALETTE.gold} intensity={2.5} distance={4} decay={2} visible={false} />
     </>
   );
 }

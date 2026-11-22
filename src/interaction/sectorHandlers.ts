@@ -19,8 +19,9 @@ const TAP_MAX_PX = 6;
  * Sector hover and tap → store actions.
  * - Hover is for mouse pointers only (a touch "hover" would stick after the tap).
  * - Only the nearest sector reacts (stopPropagation).
- * - A tap always works: in the overview, from a seat, or mid-flight (the camera
- *   re-targets from wherever it is). Tapping the seat you already sit on does nothing.
+ * - A tap focuses the sector (3/4 view, its seats become tappable). It works in
+ *   the overview, from a seat, or mid-flight (the camera re-targets from
+ *   wherever it is). Tapping the sector already in focus does nothing here.
  */
 export function sectorPointerHandlers(venue: Venue, code: string): SectorPointerHandlers {
   return {
@@ -38,12 +39,11 @@ export function sectorPointerHandlers(venue: Venue, code: string): SectorPointer
     onClick(e) {
       if (e.delta > TAP_MAX_PX) return; // end of a drag, not a tap
       e.stopPropagation();
-      const sector = venue.sectorByCode.get(code);
-      const seat = sector ? venue.manifest.seats[sector.representativeSeat] : undefined;
-      if (!seat) return;
+      if (!venue.sectorByCode.has(code)) return;
       const s = appStore.get();
-      if (s.view === 'seat' && s.seatId === seat.id) return;
-      actions.selectSector(code, seat.id);
+      // Already focused on this sector: taps on its seats are handled by the seat picker.
+      if (s.view === 'sector' && s.selectedSector === code) return;
+      actions.focusSector(code);
     },
   };
 }
