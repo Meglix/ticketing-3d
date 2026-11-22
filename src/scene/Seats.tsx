@@ -29,7 +29,7 @@ import { PALETTE } from './palette.ts';
  *
  *   far    4-triangle seat (pan + back as two quads)    camera > 140 m away
  *   near   20-triangle seat (pan + backrest boxes)       otherwise
- *   detail ~70-triangle seat (pan, back, armrest, leg)   the focused sector only
+ *   detail ~110-triangle seat (pan, bucket back, armrest, leg)   the focused sector only
  *
  * far/near share ONE matrix buffer and ONE colour buffer; the focused
  * sector's seats are hidden there (zero matrices) and drawn by the detail

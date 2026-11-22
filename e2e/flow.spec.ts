@@ -161,7 +161,7 @@ test('flow video (1440x900, 25 fps, frame-accurate)', async ({ browser }) => {
   const input = Buffer.concat(files.map((f) => readFileSync(join(FRAMES_DIR, f))));
   const res = spawnSync(
     ffmpeg!,
-    ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-',
+    ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', 'pipe:0',
       '-c:v', 'libvpx', '-b:v', '1800k', '-qmin', '4', '-qmax', '40', '-deadline', 'good', '-cpu-used', '2', '-pix_fmt', 'yuv420p', OUT],
     { input, maxBuffer: 1 << 30 },
   );

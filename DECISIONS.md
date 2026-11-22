@@ -385,10 +385,10 @@ Each entry: **decision** — alternatives — why. Newest at the bottom.
     flight tests use the new pose.
 
 57. **Seat model: three LODs sharing one set of instance buffers.** Far is
-    4 triangles, near 20, detail about 70 (pan, lip, back, headrest, armrest,
+    4 triangles, near 20, detail about 110 (pan, lip, bucket back, headrest, armrest,
     post, leg). Detail is used only for the focused sector, and that sector's
     near/far instances are hidden by zeroing their matrices. Why: 30,335 seats ×
-    70 triangles would be about 2.1 M triangles for no visible gain at a distance.
+    110 triangles would be about 3.3 M triangles for no visible gain at a distance.
 
 58. **Gold means "your seat" and nothing else.** The VIP tier was gold in V1.
     A first recolour to platinum (#dfe3ea) bloomed into a white block in the

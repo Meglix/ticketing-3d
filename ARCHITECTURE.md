@@ -208,7 +208,7 @@ twice.
   city or terrain.
 - **Seats: 30,335 instances in three levels of detail, sharing one set of
   instance buffers** (matrix + colour). Far is 4 triangles, near 20, and
-  detail about 70 (pan, lip, back, headrest, armrest, leg). Detail is drawn
+  detail about 110 (pan, lip, bucket back with side wings, headrest, armrest, leg). Detail is drawn
   only for the focused sector. That sector's near/far copies are hidden by
   zeroing their matrices, so it is never drawn twice. The instance colour
   is the state:
