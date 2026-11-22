@@ -73,7 +73,7 @@ function spotPositions(venue: Venue): [number, number, number][] {
   ];
 }
 
-const SPOT_INTENSITY = 2.6;
+const SPOT_INTENSITY = 2.5;
 
 export function Environment({ venue }: { venue: Venue }) {
   const dome = useMemo(nightDomeMaterial, []);
@@ -115,8 +115,8 @@ export function Environment({ venue }: { venue: Venue }) {
           target={target}
           color="#eaf1ff"
           intensity={0}
-          angle={0.95}
-          penumbra={0.65}
+          angle={0.82}
+          penumbra={0.7}
           decay={0}
           distance={0}
         />

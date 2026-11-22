@@ -1,5 +1,6 @@
 import { useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
+import { actions, appStore } from '../state/store.ts';
 import { smoothstep } from './meshData.ts';
 
 /**
@@ -69,6 +70,7 @@ export function LookDirector({ groups }: { groups: number }) {
       if (introStartMs === null) introStartMs = now - look.intro * 1000;
       look.intro = Math.min(INTRO_SECONDS, (now - introStartMs) / 1000);
     }
+    if (look.intro >= INTRO_SECONDS && appStore.get().introPlaying) actions.endIntro();
     look.holo = holoForDistance(p.length());
     look.power = masterPower(look.intro, groups);
     if (prev.init && delta > 0) {

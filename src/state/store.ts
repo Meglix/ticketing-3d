@@ -34,6 +34,8 @@ export interface AppState {
   checkoutOpen: boolean;
   /** True once the 3D scene has rendered its first frame (the UI shows a loader until then). */
   sceneReady: boolean;
+  /** True while the cinematic intro plays (the UI stays out of the way). */
+  introPlaying: boolean;
   /** Set when 3D cannot run: no WebGL, the GPU context was lost, or the scene crashed. */
   sceneFailure: SceneFailure | null;
 }
@@ -49,6 +51,7 @@ const initialState: AppState = {
   hoveredSeat: null,
   checkoutOpen: false,
   sceneReady: false,
+  introPlaying: true,
   sceneFailure: null,
 };
 
@@ -152,6 +155,11 @@ export const actions = {
 
   markSceneReady(): void {
     set({ sceneReady: true });
+  },
+
+  /** The intro finished or was skipped. */
+  endIntro(): void {
+    set({ introPlaying: false });
   },
 
   /** The 3D scene cannot continue; the app swaps in a Romanian fallback screen. */

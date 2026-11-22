@@ -32,8 +32,8 @@ import { PALETTE } from './palette.ts';
  */
 
 /** HDR colour of a fully powered lamp / strip (bloom threshold is ~0.92). */
-const LAMP_HDR = new Color('#fff3dc').multiplyScalar(5.5);
-const STRIP_HDR = new Color('#f2f6ff').multiplyScalar(3.2);
+const LAMP_HDR = new Color('#fff3dc').multiplyScalar(4);
+const STRIP_HDR = new Color('#f2f6ff').multiplyScalar(1.9);
 
 /** Stand group of a plan point, in power-on order: Tribuna I, Peluza II, Tribuna II, Peluza I. */
 function groupOf(x: number, z: number, halfLength: number, halfWidth: number): number {
@@ -47,8 +47,8 @@ function stripGeometries(venue: Venue): BufferGeometry[] {
   const roof = venue.config.roof;
   if (!roof) return [];
   const curve = venue.curve;
-  const d0 = roof.inner.distance + 0.15;
-  const d1 = roof.inner.distance + 0.75;
+  const d0 = roof.inner.distance + 0.2;
+  const d1 = roof.inner.distance + 0.5;
   const y = roof.inner.height - 1.06;
   return roof.segments.map((seg) => {
     const pos: number[] = [];

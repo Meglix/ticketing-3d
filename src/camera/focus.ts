@@ -31,13 +31,14 @@ export function sectorFocusPose(venue: Venue, code: string, aspect: number): Cam
 
   const frame = frameAt(venue.curve, sMid);
   const c = pointAt(venue.curve, sMid, (first.distance + last.distance) / 2);
-  const center = vec(c.x, (first.elevation + last.elevation) / 2 + 0.6, c.z);
+  // Centre slightly low so the LED board on the ring's front edge is in frame too.
+  const center = vec(c.x, (first.elevation + last.elevation) / 2 - 0.4, c.z);
 
   // Extent of the seat block on screen: its width along the rows, and the
   // rake (depth × height) seen from the elevated viewpoint.
   const width = offsetLength(venue.curve, sector.span.from, sector.span.to, mid.distance);
   const depth = last.distance - first.distance + 1;
-  const rise = last.elevation - first.elevation + 1.5;
+  const rise = last.elevation - first.elevation + 1.5 + 2.5; // + the fascia board below the front row
   const vertical = depth * Math.sin(FOCUS_ELEVATION) + rise * Math.cos(FOCUS_ELEVATION);
 
   const tanV = Math.tan(deg(FOCUS_FOV) / 2) * FOCUS_FILL;

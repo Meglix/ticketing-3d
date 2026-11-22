@@ -34,7 +34,7 @@ export const PALETTE = {
   /** Concrete in the luminous overview: nearly black, the edges carry the shape. */
   holoConcrete: '#06080d',
   /** Concrete close up at night (lit by the floodlights). */
-  nightConcrete: '#4a4a4c',
+  nightConcrete: '#35363b',
   /** Cool glow of the structure lines. */
   holoLine: '#8fb4ff',
   /** Night roof (dark aluminium) and facade. */

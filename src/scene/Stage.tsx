@@ -10,6 +10,7 @@ import { Environment } from './Environment.tsx';
 import { Field } from './Field.tsx';
 import { Fixtures } from './Fixtures.tsx';
 import { buildLabelModels, createLabelRegistry, LabelLayer, LabelTracker } from './Labels.tsx';
+import { LedBoards } from './LedBoards.tsx';
 import { LookDirector } from './look.ts';
 import { Roof } from './Roof.tsx';
 import { Seats } from './Seats.tsx';
@@ -120,6 +121,7 @@ export function Stage({ venue, children }: { venue: Venue; children?: ReactNode 
         <SeatPicker venue={venue} />
         <Roof venue={venue} />
         <Fixtures venue={venue} />
+        <LedBoards venue={venue} />
         <LabelTracker models={labels} registry={registry} />
         <FirstFrame />
         {monitor}

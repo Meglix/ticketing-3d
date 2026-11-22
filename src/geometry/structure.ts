@@ -25,7 +25,7 @@ interface SectionPoint {
   y: number;
 }
 
-const PARAPET_THICKNESS = 0.2;
+export const PARAPET_THICKNESS = 0.2;
 const BACK_WALL_THICKNESS = 0.3;
 /** Tread depth assumed for a single-row sector (no neighbour to measure from). */
 const SINGLE_ROW_DEPTH = 1.0;
