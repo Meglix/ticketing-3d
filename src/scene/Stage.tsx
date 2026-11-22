@@ -94,7 +94,8 @@ export function Stage({ venue, children }: { venue: Venue; children?: ReactNode 
   const floodGroups = Math.max(1, venue.config.roof?.segments.length ?? 1);
 
   return (
-    <div className="stage">
+    // data-quality / data-dpr: the adaptive level in use (read by the e2e performance check).
+    <div className="stage" data-quality={tier} data-dpr={dpr}>
       <Canvas
         dpr={dpr}
         // The composer renders off-screen and does its own anti-aliasing (SMAA).

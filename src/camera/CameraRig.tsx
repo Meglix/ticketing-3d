@@ -178,7 +178,17 @@ export function CameraRig({ venue }: { venue: Venue }) {
       r.mode = 'overview';
     };
 
+    // The tap that skips the intro does only that: its click must not also
+    // select whatever sector happens to be under it while the camera moves.
+    let swallowClick = false;
+    const onClickCapture = (e: MouseEvent): void => {
+      if (!swallowClick) return;
+      swallowClick = false;
+      e.stopPropagation();
+    };
+
     const onDown = (e: PointerEvent): void => {
+      swallowClick = r.mode === 'intro';
       endIntro(); // a tap or click anywhere skips the intro
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pointers.size === 1) {
@@ -261,6 +271,7 @@ export function CameraRig({ venue }: { venue: Venue }) {
     };
 
     el.addEventListener('pointerdown', onDown);
+    window.addEventListener('click', onClickCapture, true);
     el.addEventListener('pointermove', onMove);
     el.addEventListener('pointerup', onUp);
     el.addEventListener('pointercancel', onUp);
@@ -268,6 +279,7 @@ export function CameraRig({ venue }: { venue: Venue }) {
     window.addEventListener('keydown', onKey, true);
     return () => {
       el.removeEventListener('pointerdown', onDown);
+      window.removeEventListener('click', onClickCapture, true);
       el.removeEventListener('pointermove', onMove);
       el.removeEventListener('pointerup', onUp);
       el.removeEventListener('pointercancel', onUp);

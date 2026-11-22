@@ -1,7 +1,7 @@
 import { useThree } from '@react-three/fiber';
 import { useEffect } from 'react';
 import { availabilityFor, SOLD } from '../demo/availability.ts';
-import { pickedSeatIndex, PICK_BOX } from './seatPicking.ts';
+import { pickedSeatIndex, seatScreenAnchor } from './seatPicking.ts';
 import { Raycaster, Vector2, Vector3 } from 'three';
 import type { CameraPose } from '../camera/cameraMath.ts';
 import { appStore, type AppState } from '../state/store.ts';
@@ -12,6 +12,8 @@ import { sectorAtPoint } from './hitSector.ts';
  * Test seam for the Playwright e2e (and handy in the dev console):
  *
  *   window.__clujDemo.sectorScreenPoint('2M2')  → { x, y } in CSS px, or null
+ *   window.__clujDemo.seatScreenPoint('2M2-R5-S7') → { x, y } where a tap picks that seat (sector focus)
+ *   window.__clujDemo.availableSeat('2M2')      → a free seat a tap can reach from the current view
  *   window.__clujDemo.state()                    → the app store snapshot
  *   window.__clujDemo.cameraIdle()               → false while the camera is animating
  *   window.__clujDemo.cameraPose()               → { position, target, fov }
@@ -29,8 +31,8 @@ export interface ClujDemoSeam {
   sectorScreenPoint(code: string): { x: number; y: number } | null;
   /** Screen point where a real tap picks this seat (sector focus), or null. */
   seatScreenPoint(seatId: string): { x: number; y: number } | null;
-  /** A free seat near the middle of a sector (deterministic demo availability). */
-  availableSeat(code: string): string | null;
+  /** A free seat near the middle of a sector (demo availability) that a tap can reach now, skipping `except`. */
+  availableSeat(code: string, except?: string): string | null;
   state(): AppState;
   cameraIdle(): boolean;
   cameraMode(): string;
@@ -104,9 +106,7 @@ export function TestSeam({
         const seat = venue.seatById.get(seatId);
         if (!seat) return null;
         const rect = gl.domElement.getBoundingClientRect();
-        // The visible top of the seat (as in seatPicking.test.ts).
-        const y = seat.position.y + PICK_BOX.lift + PICK_BOX.height / 2 - 0.08;
-        const ndc = new Vector3(seat.position.x, y, seat.position.z).project(camera);
+        const ndc = seatScreenAnchor(seat, new Vector3()).project(camera);
         if (ndc.z < -1 || ndc.z > 1 || Math.abs(ndc.x) > 0.96 || Math.abs(ndc.y) > 0.96) return null;
         const px = rect.left + ((ndc.x + 1) / 2) * rect.width;
         const py = rect.top + ((1 - ndc.y) / 2) * rect.height;
@@ -118,9 +118,13 @@ export function TestSeam({
         if (venue.manifest.seats[pickedSeatIndex(sector, hit.instanceId)!]!.id !== seatId) return null;
         return { x: px, y: py };
       },
-      availableSeat(code) {
+      availableSeat(code, except) {
         const sold = availabilityFor(venue.manifest);
-        for (const index of candidateSeats(venue, code)) if (sold[index] !== SOLD) return venue.manifest.seats[index]!.id;
+        for (const index of candidateSeats(venue, code)) {
+          const id = venue.manifest.seats[index]!.id;
+          if (sold[index] === SOLD || id === except) continue;
+          if (seam.seatScreenPoint(id)) return id; // a tap can reach it from the current view
+        }
         return null;
       },
       state: () => appStore.get(),

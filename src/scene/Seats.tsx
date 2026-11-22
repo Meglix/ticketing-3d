@@ -147,7 +147,7 @@ export function Seats({ venue }: { venue: Venue }) {
       far: glowMaterial(glow, { roughness: 0.55, metalness: 0, side: DoubleSide }),
       detail: glowMaterial(detailGlow, { roughness: 0.48, metalness: 0.05 }),
       gold: new MeshStandardMaterial({ color: GOLD, emissive: GOLD, emissiveIntensity: 0.8, roughness: 0.6, metalness: 0 }),
-      hover: new MeshStandardMaterial({ color: '#dfe9ff', emissive: '#9ec2ff', emissiveIntensity: 0.7, roughness: 0.4 }),
+      hover: new MeshStandardMaterial({ color: '#dfe9ff', emissive: '#9ec2ff', emissiveIntensity: 1.35, roughness: 0.4 }), // blooms a little: stands out even on silver VIP seats
     }),
     [glow, detailGlow],
   );
