@@ -498,3 +498,43 @@ Each entry: **decision** — alternatives — why. Newest at the bottom.
       on the pitch's green. Also: the tier dot is no longer clipped, the hint
       wraps in balanced lines, the demo badge is opaque, the intro title has a
       dark pool behind it, and the ambient light is dimmer.
+
+## V2 — independent review, round 3
+
+66. **Third fresh reviewer: 6/9 PASS** (black background, luminous overview, LED
+    boards, seat states, gold seat, camera flight). PARTIAL: close-up lighting,
+    the seat-view foreground, and UI edge cases. Changed:
+    - **The seat view shows the stadium, not the availability map.** The rows in
+      front read as black boxes mainly because they were *sold* seats: lower
+      rows sell first in the demo data, and sold is drawn dark grey. Dark grey
+      is a UI encoding for choosing a seat. In the first-person view the seats
+      keep their real (tier) colour, and the sold/free map stays in the sector
+      focus.
+    - **Moulded seats without more triangles:** the detail seat's pan, back,
+      wings and headrest are welded with smooth normals. The first attempt broke
+      the scene: welded parts had no `uv`, so `mergeGeometries` refused to
+      merge them, and the error boundary showed the fallback page. It was caught
+      by a console probe before any commit, and `uv` is now dropped in the shared merge.
+    - **Floodlit falloff:** the spotlight cones are narrower (0.66 rad) with a
+      soft edge (penumbra 0.9), so the pitch stays lit and the stands fall off.
+      Night concrete is darker. Bloom threshold is 1.0, so only light sources
+      glow and lit surfaces no longer haze. The fill light in the seat view is
+      wider with a linear falloff.
+    - **Intro clock starts after the first frame.** That frame compiles every
+      shader; at DPR 2 in software it took seconds, so the phone "intro" still
+      showed the finished overview. On a real phone the compile ate into the
+      opening darkness.
+    - The intro card fades out in 0.5 s, so it no longer crossfades with the
+      overview UI. The checkout's demo banner is gold on dark glass instead of
+      an amber slab, still the first thing you read.
+    **Documented instead:** the dark band between the track and the first
+    row in lower-ring seat views is the back of the front wall, which faces
+    away from every light. That is physically plausible; a lit wall or
+    advertising boards would be content, not a fix.
+
+67. **The rapid-taps e2e was flaky (1 in 3), and the test was at fault.** Per-tap
+    camera logging showed that one ~400 ms software frame moved the camera
+    about 48 m between taps, past the next fixed target (2M2), so it was
+    legitimately off screen. The test now waits until the camera is in the air
+    and taps whichever other sector is visible then, twice: 4/4 passes, and
+    every run truly re-targets mid-flight.

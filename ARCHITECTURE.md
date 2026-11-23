@@ -213,8 +213,14 @@ twice.
   zeroing their matrices, so it is never drawn twice. The instance colour
   is the state:
   - overview: tier colour;
-  - focused sector: tier colour (available), dark grey (sold), white (hovered);
+  - focused sector in the sector focus: tier colour (available), dark grey
+    (sold), with a separate cyan mesh for the hovered seat;
+  - focused sector in the seat view: tier colour for every seat. You are looking
+    at the stadium there, not at the availability map;
   - other sectors: dimmed.
+
+  The detail seat's parts have welded vertices and smooth normals, so up close
+  they shade like moulded plastic at no extra triangle cost.
 
   A small shader patch (`onBeforeCompile`) also adds `colour × glow` to the
   emissive term, but only on the *backrests* (a `glowMask` vertex attribute),
@@ -242,8 +248,9 @@ twice.
 
 The composer renders the scene into a half-float (HDR) buffer, then runs:
 
-1. Bloom (threshold 0.92): only light sources are brighter than 1.0, so only
-   they glow.
+1. Bloom (threshold 1.0): only light sources (floodlight strips, lamps, LED
+   text, the gold pin) are brighter than 1.0, so only they glow. Lit surfaces
+   never haze over.
 2. Speed blur: a radial blur whose strength is the camera's speed, so it is
    zero at rest.
 3. ACES Filmic tone mapping.
@@ -308,7 +315,9 @@ looks around within limits. Escape goes up one level.
 
 **Intro.** The camera orbits in from far, low and swung about 140°, while the
 floodlights power on. It runs on the wall clock (7 s) so a slow device doesn't
-get a stretched intro. Any tap, drag, wheel or pinch skips it, and so does
+get a stretched intro. The clock starts on the *second* frame, because the
+first one compiles every shader (seconds on a slow GPU) and would otherwise
+eat into the intro. Any tap, drag, wheel or pinch skips it, and so does
 `prefers-reduced-motion`. The skipping tap is swallowed so it doesn't also
 select a sector.
 
