@@ -31,7 +31,9 @@ import { look } from './look.ts';
 const ROW_W = 1024;
 const ROW_H = 64;
 const SURFACE_GAP = 0.035; // in front of the wall, against z-fighting
-const TEXT_HDR = new Color(1.75, 1.55, 1.25);
+// Just under the bloom threshold (1.0, smoothing 0.12): the letters stay crisp
+// instead of getting a bloom halo.
+const TEXT_HDR = new Color(0.86, 0.78, 0.64);
 
 interface Board {
   from: number;
@@ -116,8 +118,6 @@ function drawAtlas(boards: Board[], lengths: number[]): HTMLCanvasElement {
     ctx.setTransform(sx, 0, 0, 1, ROW_W / 2, y + ROW_H / 2 + 1);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.shadowColor = 'rgba(255, 190, 110, 0.9)';
-    ctx.shadowBlur = 6;
     ctx.fillStyle = '#fff0d6';
     ctx.fillText(b.text, 0, 0);
     ctx.restore();

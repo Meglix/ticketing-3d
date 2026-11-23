@@ -3,7 +3,8 @@ import { Bloom, EffectComposer, Noise, SMAA, ToneMapping, Vignette, wrapEffect }
 import { BlendFunction, Effect, EffectAttribute, ToneMappingMode, type BloomEffect } from 'postprocessing';
 import { useRef } from 'react';
 import { Uniform } from 'three';
-import { INTRO_SECONDS, look } from './look.ts';
+import { appStore } from '../state/store.ts';
+import { look } from './look.ts';
 
 /**
  * Post-processing for the night look. The scene renders into a half-float
@@ -56,9 +57,11 @@ export function Effects({ tier }: { tier: QualityTier }) {
     // Bloom swells as the floodlights power on during the intro.
     if (bloomRef.current) bloomRef.current.intensity = 0.25 + 1.05 * look.power;
     const u = blurRef.current?.uniforms.get('strength');
-    // During the intro the camera is fast for seconds on end: full blur kept
-    // the venue out of focus for most of the opening, so it is a third there.
-    const k = look.intro < INTRO_SECONDS ? 0.35 : 1;
+    // Only the flight started by a click on a sector or a seat is blurred (a
+    // "zoom in"). Orbiting with the mouse, the intro and the way back to the
+    // overview stay sharp.
+    const s = appStore.get();
+    const k = s.inTransit && s.view !== 'overview' ? 1 : 0;
     if (u) u.value = k * Math.min(BLUR_MAX, (look.speed / BLUR_FULL_SPEED) * BLUR_MAX);
   });
 
