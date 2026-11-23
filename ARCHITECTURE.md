@@ -216,7 +216,9 @@ twice.
   - focused sector in the sector focus: tier colour (available), dark grey
     (sold), with a separate cyan mesh for the hovered seat;
   - focused sector in the seat view: tier colour for every seat. You are looking
-    at the stadium there, not at the availability map;
+    at the stadium there, not at the availability map. Both colourings are
+    kept, and the frame loop crossfades between them by the camera's distance
+    to your seat, so nothing pops when the flight starts;
   - other sectors: dimmed.
 
   The detail seat's parts have welded vertices and smooth normals, so up close
@@ -284,7 +286,8 @@ canvas container (`data-dpr`, `data-quality`).
   Tribuna II; portrait phone: from behind a peluza, long axis down the screen).
 - *Sector focus* (`focus.ts`): a 3/4 view from over the field, 22° to the side
   and 24° above, FOV 42°. It is framed so the sector fills about 78 % of the
-  screen, including its LED board. Because the camera is always on the field
+  screen, including its LED board. On portrait screens it fills 90 % of the width,
+  so seats are bigger tap targets. Because the camera is always on the field
   side of the roof edge, the roof never gets in the way.
 - *Seat view* (`seatViewPose`): over the shoulder, 0.85 m behind and 0.3 m above
   the seated eye point, looking along the seat's facing. The initial pitch is
@@ -365,7 +368,8 @@ thin borders, quiet type, and gold kept for the one action that matters ("Cumpă
   seat's row, number, price and state in the sector focus.
 - **Seat bar** (level 3): "Tribuna I · Sector 1C · Rând 8 · Loc 6 · 150 lei",
   a gold "Cumpără", and "Alt loc" (back to the sector). It is a slim pill on
-  laptops and a bottom card on phones.
+  laptops and a bottom sheet flush with the screen edge on phones (the sector
+  bar too).
 - **Fake checkout**: a prominent **"Demo – fără plată reală"** banner,
   1–4 adjacent seats and a total, with no payment or personal-data fields.
   It is an accessible dialog: focus is trapped, Escape and backdrop close it,

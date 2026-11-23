@@ -538,3 +538,30 @@ Each entry: **decision** — alternatives — why. Newest at the bottom.
     legitimately off screen. The test now waits until the camera is in the air
     and taps whichever other sector is visible then, twice: 4/4 passes, and
     every run truly re-targets mid-flight.
+
+## V2 — independent review, round 4
+
+68. **Fourth fresh reviewer: 7/9 PASS.** Night lighting now passes too. PARTIAL:
+    the seat-view foreground (seats look like clay placeholders) and UI edge
+    cases. Changed:
+    - **No colour pop at flight start.** The reviewer saw every sold seat turn
+      to its tier colour on the first frame of the flight. Both colourings of
+      the focused sector are now kept, and the frame loop crossfades between
+      them by the camera's distance to your seat (6–40 m). That is about 3,000
+      floats per frame, and only while the camera moves.
+    - The intro's speed blur is at a third: the venue was out of focus for most
+      of the 7 s.
+    - **Portrait sector focus** fills 90 % of the width instead of 78 %, so seats
+      are about 15 % larger to tap. 97 % put the end seats of a curved corner
+      sector off screen, which the seat-picking unit test caught.
+    - **UI:**
+      - a dark pool behind the brand and badge;
+      - phone seat and sector bars as flush bottom sheets (a sliver of the gold
+        seat showed below them);
+      - a readable checkout close button on the darker banner;
+      - the phone hint's icon and text centred together;
+      - faint goal nets.
+    **Left as a known limitation:** the seat model itself. It is a box-built
+    bucket seat with smooth normals. Making it read as a real moulded,
+    upholstered seat needs a modelled instanced asset with AO, which is an
+    asset task, not a WebGL limit. It is the first item in the REPORT's next steps.
