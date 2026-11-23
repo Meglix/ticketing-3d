@@ -1,5 +1,5 @@
 import { useFrame } from '@react-three/fiber';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   AdditiveBlending,
   type BufferGeometry,
@@ -58,6 +58,8 @@ export function Stands({ venue }: { venue: Venue }) {
   const selected = useAppState((s) => s.selectedSector);
   const view = useAppState((s) => s.view);
   const focusAnchor = selected ? venue.sectorByCode.get(selected)?.labelAnchor ?? null : null;
+  /** Camera distance when the flight into the seat started (the outline fades from there). */
+  const fadeTrack = useRef({ view: 'overview' as string, from: 60 });
 
   const geometries = useMemo(
     () => new Map(sectors.map((s) => [s.code, toBufferGeometry(venue.structure.sectorSurfaces[s.code]!)])),
@@ -103,11 +105,17 @@ export function Stands({ venue }: { venue: Venue }) {
     mats.lines.opacity = (0.04 + 0.62 * h) * (0.25 + 0.75 * look.power) * lineDensity(size);
     // On the way into a seat the focused sector's outline fades out as the
     // camera closes in, rather than vanishing on the frame of the tap.
+    // The fade starts at 1 from wherever the camera is at the tap (a fixed
+    // distance curve dropped it to ~25 % on the tap frame itself).
     let fade = 1;
+    const track = fadeTrack.current;
     if (view === 'seat' && !hovered && focusAnchor) {
       const a = focusAnchor;
-      fade = smoothstep(25, 60, Math.hypot(camera.position.x - a.x, camera.position.y - a.y, camera.position.z - a.z));
+      const d = Math.hypot(camera.position.x - a.x, camera.position.y - a.y, camera.position.z - a.z);
+      if (track.view !== 'seat') track.from = Math.max(d, 12);
+      fade = smoothstep(6, track.from, d);
     }
+    track.view = view;
     mats.highlight.opacity = (0.5 + 0.45 * h) * fade;
   });
 

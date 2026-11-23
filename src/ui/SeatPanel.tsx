@@ -35,10 +35,14 @@ export function SeatPanel({ venue }: { venue: Venue }) {
             <>
               {strings.fieldRow} <strong>{summary.row}</strong>
             </>,
+            // Seat and price travel together: a narrow screen never leaves the price alone on a line.
             <>
               {strings.fieldSeat} <strong>{summary.seat}</strong>
+              <span className="ui-sep-inline" aria-hidden>
+                ·
+              </span>
+              <strong className="ui-seatbar__price">{priceText(summary.price, summary.category)}</strong>
             </>,
-            <strong className="ui-seatbar__price">{priceText(summary.price, summary.category)}</strong>,
           ]}
         />
         <DotList

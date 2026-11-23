@@ -588,3 +588,20 @@ Each entry: **decision** — alternatives — why. Newest at the bottom.
     Thin pitch and lane lines alias into dashes in the software-rendered
     captures. SMAA is on, and a GPU with MSAA would help further. Drawing the
     markings into a mipmapped pitch texture is the robust fix (next steps).
+
+## V2 — independent review, round 6
+
+70. **Sixth fresh reviewer: 6/9 PASS, none FAIL.** Black background, night
+    lighting, luminous overview, LED boards, seat states and the gold seat pass.
+    It measured frame-to-frame pixel differences across the flight: a smooth
+    ease-in, no discontinuities mid-flight, and a clean ease-out. Still PARTIAL:
+    - **Flight:** a one-frame drop of the sector outline at the tap. Root cause:
+      round 5 faded it on a fixed distance curve (25–60 m), and the
+      sector-focus camera already sits about 38 m away, so the curve read about
+      25 % on the tap frame. The fade now starts from the distance at the
+      moment of the tap, so it is exactly 1 there.
+    - **UI:** the price wrapped alone onto its own line on phones, so "Loc 18 ·
+      20 lei" is now one unit. The header chip still collided with glowing
+      board text in the sector focus, so the header is now a small dark glass
+      card. The loader is black instead of navy, so it no longer cuts to black.
+    - **Seat view:** box-built seats, an asset task (DECISIONS 68–69).
