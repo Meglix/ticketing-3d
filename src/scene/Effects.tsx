@@ -64,7 +64,7 @@ export function Effects({ tier }: { tier: QualityTier }) {
       <Bloom
         ref={bloomRef}
         mipmapBlur
-        luminanceThreshold={0.92}
+        luminanceThreshold={1.0}
         luminanceSmoothing={0.12}
         intensity={1}
         levels={tier === 'low' ? 5 : tier === 'medium' ? 6 : 8}

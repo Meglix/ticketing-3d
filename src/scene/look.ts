@@ -31,6 +31,8 @@ const POWER_STEP = 0.55;
 const POWER_RAMP = 0.7;
 
 let introStartMs: number | null = null;
+/** The first frame compiles every shader (seconds on a slow GPU): the intro clock starts after it. */
+let framesSeen = 0;
 
 /** Jump to the end of the intro (tap / click / reduced motion). */
 export function skipIntro(): void {
@@ -75,7 +77,7 @@ export function LookDirector({ groups }: { groups: number }) {
     // rig and the lights both read it, so a slow device still gets a 7 s intro
     // rather than one stretched over many slow frames. Skipping jumps it to
     // INTRO_SECONDS (see skipIntro()).
-    if (look.intro < INTRO_SECONDS) {
+    if (look.intro < INTRO_SECONDS && ++framesSeen > 1) {
       const now = performance.now();
       if (introStartMs === null) introStartMs = now - look.intro * 1000;
       look.intro = Math.min(INTRO_SECONDS, (now - introStartMs) / 1000);

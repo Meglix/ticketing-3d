@@ -15,7 +15,7 @@ import {
   MeshStandardMaterial,
   type PointLight,
 } from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeGeometries, mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { availabilityFor, SOLD } from '../demo/availability.ts';
 import { seatMatrix } from '../interaction/seatPicking.ts';
 import { useAppState } from '../state/store.ts';
@@ -53,7 +53,14 @@ function openBottomBox(w: number, h: number, d: number): BoxGeometry {
 }
 
 function merge(parts: BufferGeometry[]): BufferGeometry {
-  const merged = mergeGeometries(parts.map((p) => (p.index ? p.toNonIndexed() : p)));
+  // Seats are untextured: drop uv everywhere (welded parts have none, and
+  // mergeGeometries needs the same attributes on every part).
+  const flat = parts.map((p) => {
+    const g = p.index ? p.toNonIndexed() : p;
+    g.deleteAttribute('uv');
+    return g;
+  });
+  const merged = mergeGeometries(flat);
   parts.forEach((p) => p.dispose());
   if (!merged) throw new Error('Seat geometry merge failed');
   return merged;
@@ -92,6 +99,16 @@ function makeFarSeat(): BufferGeometry {
   return g;
 }
 
+/** A box with its corners welded and normals averaged: soft, rounded-looking shading. */
+function moulded(g: BufferGeometry): BufferGeometry {
+  g.deleteAttribute('normal');
+  g.deleteAttribute('uv');
+  const welded = mergeVertices(g, 1e-4);
+  welded.computeVertexNormals();
+  g.dispose();
+  return welded;
+}
+
 /** Detail LOD: shaped pan, bucket backrest (centre + two forward-angled wings), headrest, one armrest (shared with the neighbour), pedestal. */
 function makeDetailSeat(): BufferGeometry {
   const pan = new BoxGeometry(0.44, 0.075, 0.41);
@@ -119,7 +136,10 @@ function makeDetailSeat(): BufferGeometry {
   armPost.translate(0.245, 0.52, -0.13);
   const leg = new BoxGeometry(0.06, 0.4, 0.06);
   leg.translate(0, 0.2, -0.06);
-  return merge([pan, lip, back, wing(1), wing(-1), head, arm, armPost, leg]);
+  // Pan, backrest, wings and headrest get smooth normals: at no extra
+  // triangle cost their edges shade softly, like moulded plastic, instead of
+  // reading as hard-edged boxes up close (seat view).
+  return merge([moulded(pan), lip, moulded(back), moulded(wing(1)), moulded(wing(-1)), moulded(head), arm, armPost, leg]);
 }
 
 /**
@@ -272,6 +292,9 @@ export function Seats({ venue }: { venue: Venue }) {
         } else if (focused) {
           const id = seats[i]!.id;
           if (id === seatId) c.copy(GOLD);
+          // In the seat view you look at the stadium, not the availability map:
+          // the seats around you keep their real (tier) colour.
+          else if (view === 'seat') c.copy(base).lerp(DIM, 0.18);
           else if (sold[i] === SOLD) c.copy(SOLD_COLOR);
           else if (id === hoveredSeat) c.copy(base).lerp(WHITE, 0.6);
           else c.copy(base).lerp(WHITE, 0.06);
@@ -329,7 +352,7 @@ export function Seats({ venue }: { venue: Venue }) {
     const near = chosen ? smoothstep(2.5, 18, dist) : 1;
     const active = !!chosen && view !== 'overview';
     const pulse = Math.sin(performance.now() / 380);
-    mats.gold.emissiveIntensity = (0.34 + 0.41 * near) * (1 + 0.3 * pulse);
+    mats.gold.emissiveIntensity = (0.2 + 0.55 * near) * (1 + 0.3 * pulse);
     if (goldLightRef.current) goldLightRef.current.intensity = active ? 1.1 + 1.4 * near : 0;
     // Seat view: a soft fill from behind the camera, so the backs of the rows
     // in front (which face away from the floodlights) aren't black silhouettes.
@@ -337,7 +360,7 @@ export function Seats({ venue }: { venue: Venue }) {
     if (fillRef.current) {
       fillRef.current.position.copy(camera.position);
       fillRef.current.position.y += 0.4;
-      fillRef.current.intensity = 3.2 * seated;
+      fillRef.current.intensity = 2.4 * seated;
     }
     // Sector focus: a gold pin over your seat (a seat is only ~12 px wide there).
     const pin = pinRef.current;
@@ -365,7 +388,7 @@ export function Seats({ venue }: { venue: Venue }) {
       <mesh ref={goldRef} geometry={geo.detail} material={mats.gold} visible={false} />
       <mesh ref={hoverRef} geometry={geo.detail} material={mats.hover} visible={false} />
       <pointLight ref={goldLightRef} color={PALETTE.gold} intensity={0} distance={4} decay={2} />
-      <pointLight ref={fillRef} color="#d4e0ff" intensity={0} distance={10} decay={2} />
+      <pointLight ref={fillRef} color="#d4e0ff" intensity={0} distance={22} decay={1} />
       <group ref={pinRef} visible={false}>
         <mesh material={mats.pin} position={[0, (PIN_TOP + 1.1) / 2, 0]}>
           <cylinderGeometry args={[0.035, 0.035, PIN_TOP - 1.1, 6]} />

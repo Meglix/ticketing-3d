@@ -116,8 +116,8 @@ export function Environment({ venue }: { venue: Venue }) {
           target={target}
           color="#e0eaff"
           intensity={0}
-          angle={0.82}
-          penumbra={0.7}
+          angle={0.66}
+          penumbra={0.9}
           decay={0}
           distance={0}
         />
