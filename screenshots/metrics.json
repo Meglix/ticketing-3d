@@ -1,13 +1,13 @@
 {
   "laptop-1440x900-high": {
     "overview": {
-      "fps": 2.6,
-      "frames": 11,
-      "p95Ms": 450.1,
-      "worstMs": 450.1,
+      "fps": 2.2,
+      "frames": 9,
+      "p95Ms": 566.6,
+      "worstMs": 566.6,
       "cpu": {
-        "mainThreadMsPerFrame": 462.7,
-        "scriptMsPerFrame": 2.73
+        "mainThreadMsPerFrame": 639.93,
+        "scriptMsPerFrame": 3.59
       },
       "quality": {
         "tier": "high",
@@ -22,13 +22,13 @@
       }
     },
     "sector": {
-      "fps": 2.5,
-      "frames": 10,
-      "p95Ms": 500,
-      "worstMs": 500,
+      "fps": 2.2,
+      "frames": 9,
+      "p95Ms": 533.4,
+      "worstMs": 533.4,
       "cpu": {
-        "mainThreadMsPerFrame": 518.74,
-        "scriptMsPerFrame": 1.95
+        "mainThreadMsPerFrame": 581.8,
+        "scriptMsPerFrame": 2.4
       },
       "quality": {
         "tier": "high",
@@ -43,13 +43,13 @@
       }
     },
     "seat": {
-      "fps": 2.2,
-      "frames": 9,
-      "p95Ms": 550,
-      "worstMs": 550,
+      "fps": 1.8,
+      "frames": 8,
+      "p95Ms": 666.7,
+      "worstMs": 666.7,
       "cpu": {
-        "mainThreadMsPerFrame": 624.46,
-        "scriptMsPerFrame": 3.75
+        "mainThreadMsPerFrame": 795.37,
+        "scriptMsPerFrame": 3.82
       },
       "quality": {
         "tier": "high",
@@ -64,17 +64,17 @@
       }
     },
     "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
-    "measuredAt": "2026-11-23T04:53:27.421Z"
+    "measuredAt": "2026-11-23T11:44:02.153Z"
   },
   "laptop-1440x900-adaptive": {
     "overview": {
-      "fps": 2.7,
-      "frames": 11,
-      "p95Ms": 483.3,
-      "worstMs": 483.3,
+      "fps": 2.2,
+      "frames": 10,
+      "p95Ms": 533.4,
+      "worstMs": 533.4,
       "cpu": {
-        "mainThreadMsPerFrame": 487.37,
-        "scriptMsPerFrame": 2.85
+        "mainThreadMsPerFrame": 608.1,
+        "scriptMsPerFrame": 2.53
       },
       "quality": {
         "tier": "high",
@@ -89,13 +89,13 @@
       }
     },
     "sector": {
-      "fps": 2.6,
-      "frames": 11,
-      "p95Ms": 466.6,
-      "worstMs": 466.6,
+      "fps": 2,
+      "frames": 9,
+      "p95Ms": 666.7,
+      "worstMs": 666.7,
       "cpu": {
-        "mainThreadMsPerFrame": 466.04,
-        "scriptMsPerFrame": 6.35
+        "mainThreadMsPerFrame": 679.1,
+        "scriptMsPerFrame": 8.63
       },
       "quality": {
         "tier": "medium",
@@ -110,38 +110,38 @@
       }
     },
     "seat": {
-      "fps": 2.4,
+      "fps": 2.2,
       "frames": 10,
-      "p95Ms": 633.3,
-      "worstMs": 633.3,
+      "p95Ms": 533.3,
+      "worstMs": 533.3,
       "cpu": {
-        "mainThreadMsPerFrame": 506.03,
-        "scriptMsPerFrame": 9.18
+        "mainThreadMsPerFrame": 587.06,
+        "scriptMsPerFrame": 3.72
       },
       "quality": {
         "tier": "medium",
         "dpr": 1
       },
       "renderer": {
-        "calls": 70,
-        "triangles": 722962,
+        "calls": 65,
+        "triangles": 722957,
         "geometries": 89,
-        "textures": 26,
+        "textures": 14,
         "pixelRatio": 1
       }
     },
     "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
-    "measuredAt": "2026-11-23T04:54:07.397Z"
+    "measuredAt": "2026-11-23T11:44:48.051Z"
   },
   "phone-390x844-adaptive": {
     "overview": {
-      "fps": 4.3,
-      "frames": 18,
-      "p95Ms": 366.6,
-      "worstMs": 366.6,
+      "fps": 3.3,
+      "frames": 14,
+      "p95Ms": 450,
+      "worstMs": 450,
       "cpu": {
-        "mainThreadMsPerFrame": 287.95,
-        "scriptMsPerFrame": 3.47
+        "mainThreadMsPerFrame": 366.76,
+        "scriptMsPerFrame": 3.72
       },
       "quality": {
         "tier": "high",
@@ -156,13 +156,13 @@
       }
     },
     "sector": {
-      "fps": 6.5,
-      "frames": 27,
-      "p95Ms": 200,
-      "worstMs": 200.1,
+      "fps": 5.4,
+      "frames": 22,
+      "p95Ms": 216.7,
+      "worstMs": 249.9,
       "cpu": {
-        "mainThreadMsPerFrame": 165.43,
-        "scriptMsPerFrame": 1.84
+        "mainThreadMsPerFrame": 214.92,
+        "scriptMsPerFrame": 2.18
       },
       "quality": {
         "tier": "low",
@@ -177,13 +177,13 @@
       }
     },
     "seat": {
-      "fps": 5.7,
-      "frames": 23,
-      "p95Ms": 216.6,
-      "worstMs": 216.6,
+      "fps": 4.6,
+      "frames": 19,
+      "p95Ms": 316.6,
+      "worstMs": 316.6,
       "cpu": {
-        "mainThreadMsPerFrame": 200.05,
-        "scriptMsPerFrame": 2.54
+        "mainThreadMsPerFrame": 242.14,
+        "scriptMsPerFrame": 2.37
       },
       "quality": {
         "tier": "medium",
@@ -198,6 +198,6 @@
       }
     },
     "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
-    "measuredAt": "2026-11-23T04:54:44.074Z"
+    "measuredAt": "2026-11-23T11:45:26.960Z"
   }
 }
