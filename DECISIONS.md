@@ -565,3 +565,26 @@ Each entry: **decision** — alternatives — why. Newest at the bottom.
     bucket seat with smooth normals. Making it read as a real moulded,
     upholstered seat needs a modelled instanced asset with AO, which is an
     asset task, not a WebGL limit. It is the first item in the REPORT's next steps.
+
+## V2 — independent review, round 5
+
+69. **Fifth fresh reviewer: 7/9 PASS**, with the UI now passing. PARTIAL: the seat
+    view (block-out seats; a dark seam before the track) and the flight. The
+    reviewer measured mean frame differences in the video: one frame jumped
+    8.3 against about 0.03 around it, at the tap, because the sector's
+    glowing outline vanished in a single frame. Changed:
+    - The focused sector's outline stays during the flight into a seat and fades
+      with the camera's distance (25–60 m), like the seat colours.
+    - The seat flight takes 2.5 s, the upper end of the brief's 2–2.5 s, so the
+      half turn is gentler.
+    - **Warm LED ribbon on every parapet top**, one merged strip. From a seat, the
+      unlit back of the front wall read as a dark seam; it is now edged by a
+      warm light line, as in the reference's warm tier accents.
+    - Seat glow up to 1.6× on small screens, because the phone overview lost
+      its tier tint.
+    **Documented, not fixed:** the seat model reads as a block-out next to the
+    reference's upholstered seats. That needs a modelled instanced seat (about
+    300 triangles, with normal and AO maps), an asset task outside this run.
+    Thin pitch and lane lines alias into dashes in the software-rendered
+    captures. SMAA is on, and a GPU with MSAA would help further. Drawing the
+    markings into a mipmapped pitch texture is the robust fix (next steps).

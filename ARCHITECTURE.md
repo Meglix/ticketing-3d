@@ -239,7 +239,9 @@ twice.
   after another. Real lighting is only a hemisphere light and 4 spotlights at
   the roof edge, because forward shading pays per light per pixel.
 - **LED fascia boards** ("SECTOR 1C · DE LA 150 LEI") run along each ring's
-  front, one board per sector. Prices come from the config. All boards are one
+  front, one board per sector. A thin warm LED ribbon runs along the top of
+  every parapet: from a seat it edges the front of the stand, and in the
+  overview it adds warm tier rings (one more draw call). Prices come from the config. All boards are one
   canvas texture atlas and one merged geometry, so they cost one draw call. The
   text is HDR-bright, so it blooms a little and switches on with the lights.
 - **Stand names** ("TRIBUNA I") are DOM labels in the overview, placed in
@@ -312,7 +314,7 @@ canvas container (`data-dpr`, `data-quality`).
 `intro → overview ⇄ flying ⇄ sector ⇄ flying ⇄ seat`. Each frame it reads
 the store's destination (`overview`, `sector:1C` or `seat:1C-R6-S14`). When the
 destination changes, it plans a new flight **from wherever the camera is right
-now** (1.6 s, or 2.2 s into a seat). That one rule makes rapid repeated taps
+now** (1.6 s, or 2.5 s into a seat). That one rule makes rapid repeated taps
 safe: no queue and no snapping, and the last tap wins. While seated, a drag
 looks around within limits. Escape goes up one level.
 
