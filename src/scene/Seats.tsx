@@ -20,7 +20,7 @@ import { availabilityFor, SOLD } from '../demo/availability.ts';
 import { seatMatrix } from '../interaction/seatPicking.ts';
 import { useAppState } from '../state/store.ts';
 import type { Venue } from '../venue/loadVenue.ts';
-import { look } from './look.ts';
+import { lineDensity, look } from './look.ts';
 import { smoothstep } from './meshData.ts';
 import { PALETTE } from './palette.ts';
 
@@ -352,12 +352,15 @@ export function Seats({ venue }: { venue: Venue }) {
     if (chosen) pinRef.current?.position.set(chosen.position.x, chosen.position.y, chosen.position.z);
   }, [chosen, hovered, view]);
 
-  useFrame(({ camera }) => {
+  useFrame(({ camera, size }) => {
     const far = camera.position.length() > FAR_LOD_DISTANCE;
     if (nearRef.current) nearRef.current.visible = !far;
     if (farRef.current) farRef.current.visible = far;
     // Luminous overview: seats emit their colour; up close they are lit instead.
-    glow.value = (0.1 + 1.1 * look.holo) * (0.35 + 0.65 * look.power);
+    // Small screens: structure lines are dimmed (lineDensity) and seats are
+    // sub-pixel, so the tier tint needs more glow to survive.
+    const small = 1 + 0.6 * (1 - lineDensity(size));
+    glow.value = (0.1 + 1.1 * look.holo) * (0.35 + 0.65 * look.power) * small;
     diffuse.value = 1 - 0.75 * look.holo; // dark seat bodies in the luminous overview
     // The chosen seat pulses softly. Up close (seat view: the camera is ~1 m
     // behind it) full strength would blow it out to a flat white-gold slab, so

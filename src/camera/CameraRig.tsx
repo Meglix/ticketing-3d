@@ -54,7 +54,7 @@ import { framingOutline } from './framing.ts';
 
 /** Flight durations (s): between levels, and the cinematic dive into a seat. */
 const FLIGHT_SECONDS = 1.6;
-const SEAT_FLIGHT_SECONDS = 2.2;
+const SEAT_FLIGHT_SECONDS = 2.5; // the upper end of the brief's 2–2.5 s: a gentler half turn into the seat
 /** A pointer that moves less than this (CSS px) is a tap, not a drag. Same threshold as the sector handlers. */
 export const TAP_SLOP_PX = 6;
 const ORBIT_SPEED = 0.005; // rad per px

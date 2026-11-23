@@ -40,6 +40,9 @@ interface Board {
   y0: number;
   y1: number;
   text: string;
+  /** Top of the parapet: height and the distance of its centre line (for the LED ribbon). */
+  topY: number;
+  topD: number;
 }
 
 function boardText(sector: SectorConfig, price: number | null): string {
@@ -75,6 +78,8 @@ function board(ring: RingConfig, sector: SectorConfig, price: number | null): Bo
     y0: bottom + margin,
     y1: top - margin,
     text: boardText(sector, price),
+    topY: top,
+    topD: front + PARAPET_THICKNESS / 2,
   };
 }
 
@@ -151,8 +156,40 @@ function buildGeometry(venue: Venue, boards: Board[], atlasH: number): { geometr
   return { geometry, lengths };
 }
 
+/**
+ * A thin warm LED ribbon along the top of each parapet. Seen from a seat it
+ * edges the front of the stand, where the unlit back of the wall otherwise
+ * read as a dark seam before the track; in the overview it adds the warm
+ * tier rings of the reference. One merged strip, one draw call.
+ */
+function buildRibbon(venue: Venue, boards: Board[]): BufferGeometry {
+  const pos: number[] = [];
+  const idx: number[] = [];
+  const HALF = 0.05;
+  for (const b of boards) {
+    const base = pos.length / 3;
+    const stations = sampleSpan(venue.curve, b.from, b.to, Math.PI / 96);
+    stations.forEach((s, k) => {
+      const inner = pointAt(venue.curve, s, b.topD - HALF);
+      const outer = pointAt(venue.curve, s, b.topD + HALF);
+      pos.push(inner.x, b.topY + 0.012, inner.z, outer.x, b.topY + 0.012, outer.z);
+      if (k > 0) {
+        const a = base + (k - 1) * 2;
+        idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+      }
+    });
+  }
+  const g = new BufferGeometry();
+  g.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  g.setIndex(idx);
+  g.computeBoundingSphere();
+  return g;
+}
+
+const RIBBON_HDR = new Color(1.7, 1.1, 0.5);
+
 export function LedBoards({ venue }: { venue: Venue }) {
-  const { geometry, material, texture } = useMemo(() => {
+  const built = useMemo(() => {
     const boards = boardsOf(venue);
     const atlasH = Math.max(ROW_H, 2 ** Math.ceil(Math.log2(boards.length * ROW_H)));
     const { geometry, lengths } = buildGeometry(venue, boards, atlasH);
@@ -161,12 +198,16 @@ export function LedBoards({ venue }: { venue: Venue }) {
     texture.anisotropy = 8;
     texture.minFilter = LinearMipmapLinearFilter;
     const material = new MeshBasicMaterial({ map: texture, color: TEXT_HDR, toneMapped: false, side: DoubleSide });
-    return { geometry, material, texture };
+    const ribbon = buildRibbon(venue, boards);
+    const ribbonMaterial = new MeshBasicMaterial({ color: RIBBON_HDR, toneMapped: false, side: DoubleSide });
+    return { geometry, material, texture, ribbon, ribbonMaterial };
   }, [venue]);
+  const { geometry, material, texture, ribbon, ribbonMaterial } = built;
 
   useFrame(() => {
-    // The boards light up with the stadium during the intro.
+    // The boards and ribbons light up with the stadium during the intro.
     material.color.copy(TEXT_HDR).multiplyScalar(0.15 + 0.85 * look.power);
+    ribbonMaterial.color.copy(RIBBON_HDR).multiplyScalar(0.1 + 0.9 * look.power);
   });
 
   useEffect(
@@ -174,9 +215,16 @@ export function LedBoards({ venue }: { venue: Venue }) {
       geometry.dispose();
       material.dispose();
       texture.dispose();
+      ribbon.dispose();
+      ribbonMaterial.dispose();
     },
-    [geometry, material, texture],
+    [geometry, material, texture, ribbon, ribbonMaterial],
   );
 
-  return <mesh geometry={geometry} material={material} renderOrder={4} />;
+  return (
+    <>
+      <mesh geometry={geometry} material={material} renderOrder={4} />
+      <mesh geometry={ribbon} material={ribbonMaterial} renderOrder={4} />
+    </>
+  );
 }

@@ -14,7 +14,7 @@ import { sectorPointerHandlers } from '../interaction/sectorHandlers.ts';
 import { useAppState } from '../state/store.ts';
 import type { Venue } from '../venue/loadVenue.ts';
 import { lineDensity, look } from './look.ts';
-import { toBufferGeometry } from './meshData.ts';
+import { smoothstep, toBufferGeometry } from './meshData.ts';
 import { PALETTE } from './palette.ts';
 
 /**
@@ -57,6 +57,7 @@ export function Stands({ venue }: { venue: Venue }) {
   const hovered = useAppState((s) => s.hoveredSector);
   const selected = useAppState((s) => s.selectedSector);
   const view = useAppState((s) => s.view);
+  const focusAnchor = selected ? venue.sectorByCode.get(selected)?.labelAnchor ?? null : null;
 
   const geometries = useMemo(
     () => new Map(sectors.map((s) => [s.code, toBufferGeometry(venue.structure.sectorSurfaces[s.code]!)])),
@@ -96,11 +97,18 @@ export function Stands({ venue }: { venue: Venue }) {
   }, []);
 
   // Crossfade every frame (a few material properties, no allocations).
-  useFrame(({ size }) => {
+  useFrame(({ size, camera }) => {
     const h = look.holo;
     for (const m of [mats.base, mats.hover, mats.focus]) m.color.copy(SOLID_CONCRETE).lerp(HOLO_CONCRETE, h);
     mats.lines.opacity = (0.04 + 0.62 * h) * (0.25 + 0.75 * look.power) * lineDensity(size);
-    mats.highlight.opacity = 0.5 + 0.45 * h;
+    // On the way into a seat the focused sector's outline fades out as the
+    // camera closes in, rather than vanishing on the frame of the tap.
+    let fade = 1;
+    if (view === 'seat' && !hovered && focusAnchor) {
+      const a = focusAnchor;
+      fade = smoothstep(25, 60, Math.hypot(camera.position.x - a.x, camera.position.y - a.y, camera.position.z - a.z));
+    }
+    mats.highlight.opacity = (0.5 + 0.45 * h) * fade;
   });
 
   useEffect(
@@ -113,8 +121,8 @@ export function Stands({ venue }: { venue: Venue }) {
     [geometries, edges, allEdges, mats],
   );
 
-  // Bright outline: the hovered sector, else the focused one (not in the seat view).
-  const outlined = hovered ?? (view === 'sector' ? selected : null);
+  // Bright outline: the hovered sector, else the focused one (fading out on the way into a seat).
+  const outlined = hovered ?? (view !== 'overview' ? selected : null);
 
   return (
     <group>
