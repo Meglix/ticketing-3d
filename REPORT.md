@@ -1,5 +1,279 @@
 # REPORT — Cluj Arena "view from your seat" sales demo
 
+## V2 — "cinematic night" (this update)
+
+**Status: complete and verified on the final build.**
+
+- 102 unit tests and 11 end-to-end tests pass.
+- `npm run build` passes, and there are zero console errors in every e2e flow.
+- Seven rounds of independent visual review against the reference frames. The
+  final round graded **8 of 9 checklist items PASS**. The ninth, the
+  foreground seats in the seat view, is an asset task (a modelled seat) and is
+  documented below.
+- Deployed privately (Vercel Authentication, as chosen) at
+  https://ticketing-3d-orpin.vercel.app. Every push to
+  `claude/relaxed-galileo-5jqhby` redeploys it, and I pushed only after the
+  suite was green. The production deployment of the final build commit was
+  confirmed READY.
+
+The reference frames are in `reference/` (`frame_*.jpg`), not
+`reference/cinematic/` as the brief said. They were used as style references
+only and are not shipped in the app.
+
+The V1 report (daylight look, two levels) is kept below, unchanged except
+that its screenshots moved to `screenshots/v1/`.
+
+### What changed
+
+| Brief | Result |
+|---|---|
+| Night environment, no surroundings | Ground, plaza, hills and trees are gone. A near-black dome gradient with a faint warm haze is the only background. Floodlights are emissive strips plus instanced lamps that bloom. Real lighting is a dim hemisphere light and 4 cool spotlights from the roof edge, with soft-edged cones: the pitch is lit and the stands fall off. LED boards, a warm LED ribbon along every parapet and the gold seat are the warm accents. |
+| Tone mapping, bloom, vignette, grain, SMAA | ACES Filmic. Bloom (only light sources exceed 1.0), a speed-driven radial blur during flights, SMAA, vignette and film grain (`postprocessing` 6.39.6 / `@react-three/postprocessing` 3.2.2). DOF was left out on purpose (DECISIONS 46). |
+| Cinematic intro, 6–8 s, skippable | 7 s on the wall clock, starting after the first frame is shown. The camera orbits in from far and low while the four roof segments' floodlights power on one after another, under a "CLUJ ARENA" title card. A tap, click, drag, wheel or `prefers-reduced-motion` skips it, and the skipping tap selects nothing (e2e-tested). |
+| Luminous overview → solid by distance | Structure edges are glowing lines. Seats read as fine light: only their backrests glow, tinted by tier, over dark treads, so every row is a thin line of light. The pitch dims. All of it crossfades to solid, lit materials with the camera's distance (`look.holo`), so it follows every flight automatically. |
+| No price pills; stand names; sector name and price on hover/focus | The ~40 pills are gone. Four discreet stand names sit just outside the bowl on screen (turned along the rim on phones). The hover card (desktop) and the sector bar show the sector and "de la X lei". |
+| Three levels with back navigation | Overview → tap a sector → 3/4 **sector focus** (seats tappable) → tap a free seat → 2.5 s curved flight with FOV change and speed blur → **seat view**. The turn is spread over the whole flight, with no top-down spin. The sector outline and the seat colours fade rather than pop. Back at every level: "Alt loc", "Toate sectoarele", Escape and the browser/phone back gesture (one level per step). The gold seat stays when you go back to its sector. |
+| Seat states, demo availability | Available = tier colour, sold = dark grey, hovered = saturated cyan (raised), yours = gold with a soft glow plus a gold pin in the sector focus. In the seat view the seats around you crossfade to their real (tier) colour: you look at the stadium, not the availability map. Availability is deterministic fake data in `src/demo/availability.ts` (labelled DEMO DATA): clustered group bookings, 62–73 % sold per sector, press never for sale. |
+| Picking only in the focused sector | An invisible InstancedMesh of boxes for that sector's seats (about 1,000); R3F's `instanceId` maps to the seat. On touch, a tap on a sold seat takes the nearest free seat within 28 px, because a seat is about 8 px wide on a phone. |
+| First-person seat view | Over the shoulder, 0.85 m behind and 0.3 m above the eye point. The initial pitch is solved so that the top of your gold seat back sits just above the UI on every seat and screen. Your seat edge, armrests and the backs of the rows in front are in frame, with a soft fill light; the front of the stand is edged by the warm parapet ribbon. Drag to look around. |
+| In-world LED boards "DE LA X LEI" | One board per sector on each ring's front ("SECTOR 2C · DE LA 100 LEI", "VIP 1C · DE LA 150 LEI", "2P · PRESĂ"), prices from the config. All boards are one texture atlas and one draw call. They glow, switch on with the lights, and are readable from the sector focus and the seat view. |
+| Instanced seat model with LOD | One set of instance buffers, three LODs: 4 triangles far, 20 near, and a bucket-shaped detail seat (about 110 triangles, smooth-shaded like moulded plastic) for the focused sector only. |
+| Minimal dark glass Romanian UI | Intro card; the overview hint and legend; a sector bar (free/total, seat-state legend, "Toate sectoarele"); a seat bar "Tribuna I · Sector 1C · Rând 6 · Loc 14 · 150 lei" with a gold **Cumpără** and "Alt loc"; the fake checkout ("Demo – fără plată reală"). "Demo – geometrie aproximativă" stays in the header. |
+| Adaptive quality | A ladder of pixel ratio + effects tier (drei `PerformanceMonitor`): high → 0.75×DPR → medium (no grain) → low (no SMAA, no speed blur, fewer bloom levels). `?dpr=` / `?quality=` pin it. |
+
+### Screenshots
+
+From the e2e run on the production build, after **real taps** with a pointer
+(mouse on desktop, touch on the phone). Desktop 1440×900 at DPR 1, phone 390×844 at DPR 2.
+
+| Stage | Desktop 1440×900 | Phone 390×844 |
+|---|---|---|
+| 1. Intro (camera moving: speed blur) | ![](screenshots/desktop-1-intro.jpg) | ![](screenshots/phone-1-intro.jpg) |
+| 2. Overview | ![](screenshots/desktop-2-overview.jpg) | ![](screenshots/phone-2-overview.jpg) |
+| 3. Sector focus 1C (VIP) | ![](screenshots/desktop-3-sector.jpg) | ![](screenshots/phone-3-sector.jpg) |
+| 3b. Seat hover (desktop) | ![](screenshots/desktop-3-sector-hover.jpg) | — |
+| 4. Seat view | ![](screenshots/desktop-4-seat.jpg) | ![](screenshots/phone-4-seat.jpg) |
+| 5. Fake checkout | ![](screenshots/desktop-5-checkout.jpg) | ![](screenshots/phone-5-checkout.jpg) |
+| 6. Back to the sector (gold seat + pin) | ![](screenshots/desktop-6-sector-with-gold-seat.jpg) | ![](screenshots/phone-6-sector-with-gold-seat.jpg) |
+| 7. Seat view, Tribuna II · 2M2 | ![](screenshots/desktop-7-seat-tribuna-II-2M2.jpg) | ![](screenshots/phone-7-seat-tribuna-II-2M2.jpg) |
+| 7. Seat view, Peluza II · 1H | ![](screenshots/desktop-7-seat-peluza-II-1H.jpg) | ![](screenshots/phone-7-seat-peluza-II-1H.jpg) |
+| 7. Seat view, Peluza I · 2V | ![](screenshots/desktop-7-seat-peluza-I-2V.jpg) | ![](screenshots/phone-7-seat-peluza-I-2V.jpg) |
+
+Also: corner sector at the roof gap, ![](screenshots/desktop-8-seat-corner-2O2.jpg).
+
+### Video of the full flow
+
+[`screenshots/flow.webm`](screenshots/flow.webm), 1440×900, 25 fps, 29.8 s, 745 frames:
+
+1. the full intro, a little orbit and a sector hover;
+2. a tap on 1C and the flight to the sector focus;
+3. a seat hover and tap, then the curved flight into the seat;
+4. looking around, the fake checkout;
+5. back to the sector and then the overview.
+
+**How it was made, honestly:** this machine has no GPU, so headless Chromium
+renders WebGL in software at about 2–3 fps, and a real-time screen recording
+is a slideshow. The first version was exactly that: 4 min 11 s and 22.7 MB,
+not committed. The committed video is rendered **frame by frame**. The app
+runs in capture mode (`?capture`): its clock is virtual and the spec advances
+it 40 ms per frame and screenshots each one (DECISIONS 63). Every frame is the
+real production build reacting to real pointer input; only time is simulated.
+So the video shows the motion a GPU would show, but it is **not** a
+measurement of frame rate on any device.
+
+### Performance per stage
+
+Measured by `e2e/perf.spec.ts` in headless Chromium with **SwiftShader (software
+WebGL on the CPU, no GPU)**. Each stage was warmed up for 2.5 s and then
+sampled for 4 s. Draw calls and triangles are whole-frame totals: the scene
+plus about 10 post-processing passes.
+
+| Stage | Laptop 1440×900, quality pinned **high**, DPR 1 | Laptop 1440×900, **adaptive** | Phone 390×844 (DPR 2), **adaptive** |
+|---|---|---|---|
+| Overview | 2.6 fps · p95 450 ms · **JS 2.7 ms/frame** · 111 calls · 156k tris | 2.7 fps · stays on high, DPR 1 | 4.3 fps · high, DPR 1.5 |
+| Sector focus | 2.5 fps · p95 500 ms · **JS 2.0 ms/frame** · 57 calls · 717k tris | 2.6 fps · steps down to medium | 6.5 fps · steps down to low, DPR 1 |
+| Seat view | 2.2 fps · p95 550 ms · **JS 3.8 ms/frame** · 74 calls · 723k tris | 2.4 fps · medium | 5.7 fps · medium, DPR 1 |
+
+**How to read this:**
+
+- The fps column measures this container's CPU rasteriser, not a laptop or a
+  phone. About 500 ms of main-thread time per frame is spent waiting for the
+  software GPU.
+- What transfers to real hardware is **our JavaScript cost: about 2–4 ms per
+  frame** at a fixed quality. The adaptive run's 6–9 ms includes the one-off
+  rebuild of the effect chain when the quality tier steps down.
+  The per-frame seat-colour crossfade adds nothing measurable.
+- It also shows that **the adaptive ladder works**: under load it drops to
+  medium/low and DPR 1 by itself.
+- **The geometry load in the sector focus and seat view (about 720k triangles)
+  is the biggest remaining lever.** Within 140 m every seat of the stadium is
+  drawn with the 20-triangle model. Per-instance distance LOD would cut it
+  to roughly 300k: the detail sector is about 110k, nearby seats at 20
+  triangles about 60k, and distant seats at 4 triangles about 120k (next steps).
+- The post-processing chain costs fill rate: bloom mips, SMAA, blur and grain
+  are full-screen passes. That is why the tiers drop them first.
+
+**No real-GPU number is claimed.** Open the deployed site with `?fps` on the
+demo laptop and a mid-range phone to measure. The 60 fps (laptop) and
+≥ 30 fps (phone) targets are design targets backed by the CPU cost and
+triangle counts above, not measurements.
+
+### Tests
+
+- **Unit (vitest): 102 passed, 12 files.** New in V2:
+  - demo availability: deterministic; 60–75 % sold in every sector; press never for sale; clustered; lower and central rows sell first;
+  - seat picking: a ray from the real sector-focus camera, on laptop and phone, picks exactly the seat aimed at; touch forgiveness picks the nearest free seat and never a sold one;
+  - roof-safe flights for every sector: overview → focus → seat view → focus → overview, laptop and phone;
+  - no spin: flights never look further down than their end poses and turn evenly (this test fails on the first V2 flight code);
+  - seat-view framing: the top of your own seat back projects to the intended screen height for every sector, laptop and phone.
+- **End-to-end (Playwright, production build): 11 passed, 0 failed** (about 16 min
+  under software GL; the full suite was re-run after every review round).
+  - Desktop and phone: intro → overview → real tap on a sector → sector focus → real tap on a free seat → seat view → Cumpără → Escape → "Alt loc" (the gold seat is kept) → "Toate sectoarele". Then one sector in each other stand, going back with Escape on desktop and the UI on the phone.
+  - Robustness:
+    - the intro-skipping tap selects nothing;
+    - taps on other sectors while the camera is flying re-target it, and the last tap wins;
+    - Escape mid-flight;
+    - corner sectors at the roof gaps;
+    - the press box can be viewed but nothing in it is for sale;
+    - choosing another seat moves the gold seat;
+    - the browser back gesture goes up one level per step.
+  - FPS and draw calls per stage (above), and the flow video.
+  - **Zero console errors** in every test.
+- `npm run build` passes (tsc + Vite).
+
+### Independent review
+
+The brief asked for a separate reviewer agent to compare the screenshots with
+the reference frames on a checklist, iterating until every item passes or is
+documented as a limitation. Each round used a **fresh** general-purpose agent
+with no shared context. It got the reference frames, all the stills and, from
+round 2 on, a frame sequence of the seat flight from the video. Between rounds
+I fixed what it found; the reasoning is in DECISIONS 61–70.
+
+| # | Checklist item | R1 | R2 | R3 | R4 | R5 | R6 | R7 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | Black background, no surroundings | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 2 | Glowing night lighting, bloom | ◐ | ◐ | ◐ | ✅ | ✅ | ✅ | ✅ |
+| 3 | Luminous overview | ◐ | ◐ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 4 | Readable in-world LED price boards | ✅ | ◐ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 5 | Individual seat selection, states | ◐ | ◐ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 6 | Gold selected seat, soft glow | ◐ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 7 | First-person seat view | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ | ◐ |
+| 8 | Smooth curved camera flight | ◐ | ◐ | ✅ | ✅ | ◐ | ◐ | ✅ |
+| 9 | Premium minimal UI | ◐ | ◐ | ◐ | ◐ | ✅ | ◐ | ✅ |
+
+✅ PASS · ◐ PARTIAL · ❌ FAIL (no item was ever graded FAIL).
+
+**What the rounds changed (the main findings, each traced to a root cause):**
+
+- **R1 → overview as fine light, not a price heatmap.** Only the seat
+  backrests glow, the seat bodies go dark, and the pitch dims.
+  - The VIP tier moved from gold to silver, because gold is "your seat".
+  - The header got a scrim; the phone separators no longer dangle at line ends.
+  - Hover became cyan; your seat got a gold pin.
+  - Lights now stay in the scene at intensity 0, because toggling their
+    visibility recompiled every shader on the first tap.
+- **R2 → the flight spin.** Flights interpolated the look-*target point*, which
+  swept under the camera, so the view tipped straight down and spun.
+  - Flights now interpolate the view *direction*, with a regression test.
+  - The seat-view pitch is now solved from geometry, with a test.
+- **R3 → the seat view shows the stadium.** The "black boxes" in front were
+  sold seats drawn in the availability map's dark grey.
+  - Moulded (smooth-normal) seats.
+  - Floodlight falloff, and bloom only from light sources.
+  - The intro clock starts after the first frame, which compiles every shader.
+- **R4 → crossfades instead of pops** between the availability map and the real
+  seat colours. Also: calmer intro blur, a larger phone sector framing, and
+  phone bottom sheets.
+- **R5 → a warm LED ribbon on the parapets.** The front of the stand read as a
+  dark seam. The seat flight is now 2.5 s.
+- **R6 → the outline fade starts exactly at the tap** (it dropped to about 25 %
+  on the tap frame). On phones the seat and price stay together, and the header
+  sits on a glass card.
+
+**Round 7 (final): 8/9 PASS.** The reviewer diffed the tap frames and
+confirmed **no pops in the 3D scene**: the colours fade evenly and the flight
+settles cleanly. The one PARTIAL is **the seat view's foreground seats**: the
+box-built bucket seat looks like a placeholder next to the reference's
+upholstered seats. The reviewer classifies the seat model as an **asset
+task**; between-row ambient occlusion would help without one. Its other
+findings are polish and are listed under limitations.
+
+### Limitations compared with the reference
+
+- **No global illumination, ambient occlusion or real shadows.** The reference
+  looks pre-rendered or baked. Here the stands are lit by a hemisphere light,
+  4 spotlights and a fill light in the seat view, so up close they are flatter
+  than the reference.
+  Real-time shadows of 30k instances, or path-traced lighting, are beyond a
+  browser demo. Baked vertex AO from the generator is feasible (next steps).
+- **Seat model (the main remaining gap; every reviewer flagged it):** a
+  bucket-shaped box model (about 110 triangles, smooth-shaded), not a moulded,
+  upholstered shell. In the seat view it reads as a block-out next to the
+  reference. That is an asset task (a modelled instanced seat), not a WebGL
+  limit. There is no crowd.
+- **Overview palette:** the reference is near-monochrome navy. Here seats are
+  tinted by price tier because the brief asks for it, at a lower intensity
+  after review round 1.
+- **Floodlights** read as bright LED strips. There is no glare, lens flare or
+  visible light cones: volumetrics and flares are possible but costly, and
+  were left for later.
+- **LED boards** use a bitmap text atlas. Far boards smudge at phone
+  resolution, and very close, steep views soften the letters.
+- **No row highlight:** the reference outlines the selected row; the demo marks
+  the seat (gold) and adds a pin in the sector focus.
+- **Thin lines alias:** pitch markings and track lanes break into dashes when
+  seen from far away, at least in the software-rendered captures. SMAA is on;
+  drawing the markings into a mipmapped pitch texture is the robust fix.
+- **Phone:** seats in the sector focus are about 8 px wide, which is why touch
+  forgiveness (nearest free seat within 28 px) exists. Your own seat is large
+  in a portrait seat view; the camera can't move further back without ending
+  up behind the seat back of the row behind (rows are 0.80 m deep).
+- **Frame rate not measured on a GPU** (see above). The flow video is
+  frame-accurate but not real-time evidence of fps.
+- **Remaining polish from the final review** (all browser-fixable):
+  - The overview's fine seat lines shimmer (moiré), and the red track draws
+    more attention than the reference's dark floor.
+  - In lower-ring seat views a dark strip remains between the front row and
+    the warm ribbon: the back of the front wall.
+  - The demo's sold-seat clusters form large blobs in the sector focus. The
+    availability generator could cluster by row instead.
+  - On a phone seat view the header card covers part of the floodlight row,
+    and "Loc N · price" wraps onto a second line for long stand names.
+  - The cyan hover was only checked against silver, purple and blue tiers, not
+    the teal 15-lei tier.
+- **Geometry and prices are still estimates** (V1 §6 checklist), and seat
+  availability is fake demo data.
+
+### Next 3 steps
+
+1. **Measure on the real devices, then spend the headroom.** Open `?fps` on
+   the sales laptop and a mid-range Android phone.
+   - Add per-instance distance LOD for the seats in the sector focus and seat
+     view: a tiny compute pass, or a split into near/far instance sets per
+     frame. That cuts about 720k triangles to roughly 300k.
+   - Render on demand when the camera is idle.
+   - Then tune the tier thresholds from the measurements.
+2. **Close the biggest visual gaps vs the reference:**
+   - a proper seat mesh (a ~300-triangle instanced GLTF shell). This is the one
+     item the final review left PARTIAL;
+   - baked ambient occlusion per vertex from the generator, which already knows
+     every step, rail and overhang;
+   - soft glare sprites at the floodlights;
+   - a row highlight in the sector focus.
+3. **Make it real data:** replace `src/demo/availability.ts` with a feed from
+   the ticketing system and add a share link per seat (`?seat=1C-R6-S14`).
+   Ground-truth the geometry with the §6 checklist (one visit), so the seat
+   views can be shown as "Cluj Arena" without the "approximate" badge.
+
+---
+
+---
+
+## V1 report — the original build (kept for reference)
+
+Everything below describes V1 (daylight look, two levels: overview → seat). Its screenshots are in `screenshots/v1/`.
+
 **Status: complete and verified.** All 85 unit tests and 7 end-to-end tests pass;
 the typecheck and `npm run build` pass; there are zero console errors. An
 independent reviewer agent (fresh context, did not write the code) checked
@@ -13,7 +287,7 @@ documented (see §5). Everything is committed and pushed on
 > against a plan or a photo. The checklist in §6 is what to verify at
 > the stadium before calling it "Cluj Arena" in front of the venue's managers.
 
-## 1. What works
+### 1. What works
 
 | Brief | Result |
 |---|---|
@@ -28,27 +302,27 @@ documented (see §5). Everything is committed and pushed on
 | Venue-agnostic generator with an extension point | ✓ A second, fictional venue (`?venue=example-arena`: football-only, one ring, no track) renders and passes the same invariant tests. The theatre ("horseshoe") extension point and its real scope are in ARCHITECTURE §9. |
 | Invalid config fails fast | ✓ zod plus semantic checks; messages name the JSON path and the sector. The app shows the errors instead of a broken scene. |
 
-## 2. Screenshots
+### 2. Screenshots
 
 All from Playwright on the production build. "Seat" screenshots were taken
 after a **real tap** on the sector in the overview and the camera's arrival.
 
 | | Laptop 1440×900 | Phone 390×844 |
 |---|---|---|
-| Overview | ![](screenshots/desktop-overview.png) | ![](screenshots/phone-overview.png) |
-| Tribuna I · 2C (100 lei) | ![](screenshots/desktop-seat-tribuna-I-2C.png) | ![](screenshots/phone-seat-tribuna-I-2C.png) |
-| Peluza II · 1H (lower ring) | ![](screenshots/desktop-seat-peluza-II-1H.png) | ![](screenshots/phone-seat-peluza-II-1H.png) |
-| Tribuna II · 2M2 | ![](screenshots/desktop-seat-tribuna-II-2M2.png) | ![](screenshots/phone-seat-tribuna-II-2M2.png) |
-| Peluza I · 2V | ![](screenshots/desktop-seat-peluza-I-2V.png) | ![](screenshots/phone-seat-peluza-I-2V.png) |
-| Fake checkout | ![](screenshots/desktop-checkout.png) | ![](screenshots/phone-checkout.png) |
+| Overview | ![](screenshots/v1/desktop-overview.png) | ![](screenshots/v1/phone-overview.png) |
+| Tribuna I · 2C (100 lei) | ![](screenshots/v1/desktop-seat-tribuna-I-2C.png) | ![](screenshots/v1/phone-seat-tribuna-I-2C.png) |
+| Peluza II · 1H (lower ring) | ![](screenshots/v1/desktop-seat-peluza-II-1H.png) | ![](screenshots/v1/phone-seat-peluza-II-1H.png) |
+| Tribuna II · 2M2 | ![](screenshots/v1/desktop-seat-tribuna-II-2M2.png) | ![](screenshots/v1/phone-seat-tribuna-II-2M2.png) |
+| Peluza I · 2V | ![](screenshots/v1/desktop-seat-peluza-I-2V.png) | ![](screenshots/v1/phone-seat-peluza-I-2V.png) |
+| Fake checkout | ![](screenshots/v1/desktop-checkout.png) | ![](screenshots/v1/phone-checkout.png) |
 
-Extra: corner sector at the roof gap ![](screenshots/desktop-seat-corner-2O2.png),
-phone in landscape ![](screenshots/phone-landscape-seat-2M2.png)
-![](screenshots/phone-landscape-checkout.png), and the second venue
-![](screenshots/example-arena-overview.png). The landscape and second-venue
+Extra: corner sector at the roof gap ![](screenshots/v1/desktop-seat-corner-2O2.png),
+phone in landscape ![](screenshots/v1/phone-landscape-seat-2M2.png)
+![](screenshots/v1/phone-landscape-checkout.png), and the second venue
+![](screenshots/v1/example-arena-overview.png). The landscape and second-venue
 shots are manual Playwright captures from the dev server.
 
-## 3. Performance (overview, all 30,335 seats rendered)
+### 3. Performance (overview, all 30,335 seats rendered)
 
 | Measured in this environment (headless Chromium, **SwiftShader = CPU rendering, 4 cores**) | DPR 1 | DPR 2 |
 |---|---|---|
@@ -75,7 +349,7 @@ does transfer to real hardware:
 frame. I could not measure a real GPU here, so I don't claim "60 fps". The
 design target is that, and the numbers above are why I expect it.
 
-## 4. Test results
+### 4. Test results
 
 **Unit tests (vitest): 85 passed, 9 files.**
 
@@ -103,7 +377,7 @@ The one console *warning* on load (`THREE.Clock … deprecated`) comes from
 
 **Build:** `npm run build` passes (tsc + Vite). Gzipped: three.js 193 kB, R3F/drei 126 kB, app 60 kB.
 
-## 5. Independent review — findings and what happened
+### 5. Independent review — findings and what happened
 
 The reviewer found no blockers and 17 findings. All four majors are fixed:
 
@@ -131,7 +405,7 @@ While fixing these, the e2e suite exposed a flaky test: it tapped during the
 load-time camera intro. That was fixed in the test, which now waits for the
 camera to be idle. The app behaviour was correct.
 
-## 6. Still ESTIMATED: what to verify at the stadium
+### 6. Still ESTIMATED: what to verify at the stadium
 
 Seat counts per row were fitted to the sourced totals (30,335 / 1,464 / 168 / 32)
 from an estimated cross-section, so per-sector counts are only as good as the
@@ -250,7 +524,7 @@ row counts. Spans are metres along the bowl's reference line (see README).
 - [ ] **2X**: 16 rows, 513 seats, 20 lei, span 407.372 … 419.153 m
 - [ ] **2Y**: 16 rows, 392 seats, 20 lei, span 419.153 … 428.434 m
 
-## 7. Known limitations
+### 7. Known limitations
 
 - **Geometry is approximate** (§6). The tool flags it in the UI ("Demo – geometrie aproximativă", "Poziție estimată").
 - **Prices are demo prices** following the historical structure; the VIP tier (150 lei) is an assumption.
@@ -263,7 +537,7 @@ row counts. Spans are metres along the bowl's reference line (see README).
 - **The theatre ("horseshoe") template** is designed for (ARCHITECTURE §9) but not built.
 - **Checkout** is a mock with no booking logic. The "1–4 adjacent seats" assumes seats are free.
 
-## 8. Recommended next 3 steps
+### 8. Recommended next 3 steps
 
 1. **Ground-truth the venue (1 visit, ½ day).** Walk the §6 checklist with
    a laser meter and the bilete.ro seat map: row counts, first-row heights,

@@ -362,7 +362,8 @@ thin borders, quiet type, and gold kept for the one action that matters ("Cumpă
 
 - **Intro title card** ("CLUJ ARENA · Vezi terenul de pe locul tău",
   "Atinge oriunde pentru a începe"). The rest of the UI waits until it ends.
-- Header with the venue name and the permanent **"Demo – geometrie aproximativă"** badge.
+- Header with the venue name and the permanent **"Demo – geometrie aproximativă"** badge,
+  on a small dark glass card (glowing LED boards often sit right behind it).
 - **Overview:** hint pill and the "Prețuri demo" legend.
 - **Sector bar** (level 2): stand · sector · "de la 150 lei", free/total seats,
   the seat-state legend (liber / vândut / locul tău), and "Toate sectoarele".
