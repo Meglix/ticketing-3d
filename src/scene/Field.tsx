@@ -290,7 +290,8 @@ export function Field({ venue }: { venue: Venue }) {
         polygonOffsetUnits: -4,
       }),
       goalFrame: new MeshStandardMaterial({ color: '#ffffff', roughness: 0.4 }),
-      net: new MeshStandardMaterial({ color: '#ffffff', transparent: true, opacity: 0.28, side: 2, depthWrite: false }),
+      // Faint: up close a denser net read as a frosted white slab.
+      net: new MeshStandardMaterial({ color: '#dfe6ee', transparent: true, opacity: 0.12, side: 2, depthWrite: false }),
     };
   }, []);
 

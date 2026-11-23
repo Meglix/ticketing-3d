@@ -17,6 +17,12 @@ const FOCUS_SIDE = deg(22);
 const FOCUS_ELEVATION = deg(24);
 /** Share of the screen the sector should fill (the rest is context). */
 const FOCUS_FILL = 0.78;
+/**
+ * On a portrait screen the sector's width is what limits the framing, and at
+ * 0.78 its seats were ~7 px wide (hard to tap): fill more of the width (0.97 put
+ * the end seats of a curved corner sector off screen; seatPicking.test.ts).
+ */
+const FOCUS_FILL_PORTRAIT_WIDTH = 0.9;
 
 export function sectorFocusPose(venue: Venue, code: string, aspect: number): CameraPose {
   const sector = venue.config.stands
@@ -41,8 +47,9 @@ export function sectorFocusPose(venue: Venue, code: string, aspect: number): Cam
   const rise = last.elevation - first.elevation + 1.5 + 2.5; // + the fascia board below the front row
   const vertical = depth * Math.sin(FOCUS_ELEVATION) + rise * Math.cos(FOCUS_ELEVATION);
 
-  const tanV = Math.tan(deg(FOCUS_FOV) / 2) * FOCUS_FILL;
-  const tanH = tanV * aspect;
+  const tanHalf = Math.tan(deg(FOCUS_FOV) / 2);
+  const tanV = tanHalf * FOCUS_FILL;
+  const tanH = tanHalf * aspect * (aspect < 1 ? FOCUS_FILL_PORTRAIT_WIDTH : FOCUS_FILL);
   const distance = Math.max(18, (width / 2) / tanH, (vertical / 2) / tanV);
 
   // Unit vector from the sector towards the camera: inwards (−normal), turned

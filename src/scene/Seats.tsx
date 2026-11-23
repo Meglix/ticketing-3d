@@ -228,6 +228,8 @@ export function Seats({ venue }: { venue: Venue }) {
     seats.forEach((seat, i) => seatMatrix(seat, m).toArray(out, i * 16));
     return out;
   }, [seats, count]);
+  /** The focused sector's two colourings and the current blend (see the colour pass). */
+  const focusColors = useRef<{ map: Float32Array; real: Float32Array; blend: number } | null>(null);
   const tierColor = useMemo(() => new Map(venue.config.priceTiers.map((t) => [t.id, new Color(t.color)])), [venue]);
 
   const view = useAppState((s) => s.view);
@@ -290,11 +292,10 @@ export function Seats({ venue }: { venue: Venue }) {
           c.copy(base);
           if (sector.code === hoveredSector) c.lerp(WHITE, 0.45);
         } else if (focused) {
+          // The availability map (sector focus). The seat view's colours are
+          // blended in per frame as the camera comes close (see useFrame).
           const id = seats[i]!.id;
           if (id === seatId) c.copy(GOLD);
-          // In the seat view you look at the stadium, not the availability map:
-          // the seats around you keep their real (tier) colour.
-          else if (view === 'seat') c.copy(base).lerp(DIM, 0.18);
           else if (sold[i] === SOLD) c.copy(SOLD_COLOR);
           else if (id === hoveredSeat) c.copy(base).lerp(WHITE, 0.6);
           else c.copy(base).lerp(WHITE, 0.06);
@@ -309,12 +310,25 @@ export function Seats({ venue }: { venue: Venue }) {
     colors.clearUpdateRanges();
     colors.needsUpdate = true;
     if (focusInfo) {
-      const d = detailColors.array as Float32Array;
-      d.set(arr.subarray(focusInfo.seatStart * 3, focusInfo.seatEnd * 3));
-      detailColors.clearUpdateRanges();
-      detailColors.needsUpdate = true;
-    }
-  }, [view, focus, focusInfo, seatId, hoveredSeat, hoveredSector, sectors, seats, sold, tierColor, colors, detailColors]);
+      // Two colourings of the focused sector: the availability map, and the
+      // real seat colours (tier, a little dimmed) for the seat view, where
+      // you look at the stadium rather than at what is sold. The frame loop
+      // crossfades between them by the camera's distance to your seat, so
+      // nothing pops when the flight starts.
+      const n = focusInfo.seatEnd - focusInfo.seatStart;
+      const map = arr.slice(focusInfo.seatStart * 3, focusInfo.seatEnd * 3);
+      const real = new Float32Array(n * 3);
+      const base = tierColor.get(focusInfo.tierId) ?? WHITE;
+      for (let k = 0; k < n; k++) {
+        if (seats[focusInfo.seatStart + k]!.id === seatId) c.copy(GOLD);
+        else c.copy(base).lerp(DIM, 0.32);
+        real[k * 3] = c.r;
+        real[k * 3 + 1] = c.g;
+        real[k * 3 + 2] = c.b;
+      }
+      focusColors.current = { map, real, blend: -1 };
+    } else focusColors.current = null;
+  }, [view, focus, focusInfo, seatId, hoveredSeat, hoveredSector, sectors, seats, sold, tierColor, colors]);
 
   // The chosen (gold) seat and the hovered seat: own meshes on top of the detail one.
   const chosen = seatId ? venue.seatById.get(seatId) : undefined;
@@ -354,13 +368,25 @@ export function Seats({ venue }: { venue: Venue }) {
     const pulse = Math.sin(performance.now() / 380);
     mats.gold.emissiveIntensity = (0.2 + 0.55 * near) * (1 + 0.3 * pulse);
     if (goldLightRef.current) goldLightRef.current.intensity = active ? 1.1 + 1.4 * near : 0;
+    // Focused sector: availability map far away → real seat colours up close.
+    const fc = focusColors.current;
+    if (fc) {
+      const blend = chosen && view !== 'overview' ? 1 - smoothstep(6, 40, dist) : 0;
+      if (Math.abs(blend - fc.blend) > 0.004) {
+        fc.blend = blend;
+        const d = detailColors.array as Float32Array;
+        for (let k = 0; k < fc.map.length; k++) d[k] = fc.map[k]! + (fc.real[k]! - fc.map[k]!) * blend;
+        detailColors.clearUpdateRanges();
+        detailColors.needsUpdate = true;
+      }
+    }
     // Seat view: a soft fill from behind the camera, so the backs of the rows
     // in front (which face away from the floodlights) aren't black silhouettes.
     const seated = active && view === 'seat' ? 1 - smoothstep(3, 8, dist) : 0;
     if (fillRef.current) {
       fillRef.current.position.copy(camera.position);
       fillRef.current.position.y += 0.4;
-      fillRef.current.intensity = 2.4 * seated;
+      fillRef.current.intensity = 1.5 * seated;
     }
     // Sector focus: a gold pin over your seat (a seat is only ~12 px wide there).
     const pin = pinRef.current;
