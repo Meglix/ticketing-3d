@@ -35,35 +35,57 @@ test('the tap that skips the intro selects nothing, even on a sector', async ({ 
   expect(errors).toEqual([]);
 });
 
-test('rapid taps on different sectors (within ~300 ms) end on the last one tapped, without errors', async ({ page }) => {
+test('taps on other sectors while the camera is flying re-target it; the last tap wins, without errors', async ({ page }) => {
   const errors = trackErrors(page);
   await page.goto('/');
   await skipIntro(page, false);
-  // Each tap targets the sector where it is on screen *now* (the camera is
-  // already flying after the first tap), like a user chasing a moving view.
-  // Software WebGL runs at ~2 fps here, so a point aimed in one frame would be
-  // stale by the time Playwright's input arrives a frame or two later. The
-  // taps are therefore aimed and dispatched in the same task, in the page:
-  // real pointerdown/pointerup/click DOM events on the canvas, which go
-  // through R3F's raycasting and the app's handlers exactly like a user tap.
-  const tapped = await page.evaluate(async (codes) => {
-    const d = (window as unknown as { __clujDemo: DemoSeam }).__clujDemo;
+  // Tap 2C, then, once the camera is really in the air, tap whichever other
+  // sector is visible *at that moment*, twice, like a user chasing a moving
+  // view. Each tap is aimed and dispatched in the same page task: software
+  // WebGL runs at ~2 fps here, so a point aimed in one frame is stale by the
+  // next, and a fixed list of sectors may legitimately have flown out of view
+  // (the camera covers ~50 m in one slow frame). The events are real
+  // pointerdown/pointerup/click DOM events on the canvas, so they go through
+  // R3F's raycasting and the app's handlers exactly like a user tap.
+  const tapped = await page.evaluate(async () => {
+    type Seam = DemoSeam & { cameraMode(): string; cameraPose(): { position: { x: number; y: number; z: number } } };
+    const d = (window as unknown as { __clujDemo: Seam }).__clujDemo;
     const canvas = document.querySelector('canvas')!;
+    const tap = (p: { x: number; y: number }) => {
+      const init = { clientX: p.x, clientY: p.y, bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', isPrimary: true, button: 0 };
+      canvas.dispatchEvent(new PointerEvent('pointerdown', { ...init, buttons: 1 }));
+      canvas.dispatchEvent(new PointerEvent('pointerup', { ...init, buttons: 0 }));
+      canvas.dispatchEvent(new MouseEvent('click', { ...init, buttons: 0 }));
+    };
+    const frame = () => new Promise((r) => requestAnimationFrame(() => r(null)));
+    const candidates = ['2M2', '1H', '2V', '1M1', '2H', '1V', '2D', '1D', '2B', '1B', '2O2', '2A1'];
     const done: string[] = [];
-    for (const code of codes) {
-      const p = d.sectorScreenPoint(code);
-      if (p) {
-        const init = { clientX: p.x, clientY: p.y, bubbles: true, cancelable: true, pointerId: 1, pointerType: 'mouse', isPrimary: true, button: 0 };
-        canvas.dispatchEvent(new PointerEvent('pointerdown', { ...init, buttons: 1 }));
-        canvas.dispatchEvent(new PointerEvent('pointerup', { ...init, buttons: 0 }));
-        canvas.dispatchEvent(new MouseEvent('click', { ...init, buttons: 0 }));
-        done.push(code);
+    const first = d.sectorScreenPoint('2C');
+    if (!first) return done;
+    tap(first);
+    done.push('2C');
+    for (let round = 0; round < 2; round++) {
+      // Wait until the camera has actually moved in this flight.
+      const before = d.cameraPose().position;
+      for (let i = 0; i < 40; i++) {
+        await frame();
+        const now = d.cameraPose().position;
+        if (d.cameraMode() === 'flying' && Math.hypot(now.x - before.x, now.y - before.y, now.z - before.z) > 0.5) break;
       }
-      await new Promise((r) => setTimeout(r, 100));
+      if (d.cameraMode() !== 'flying') break;
+      const current = d.state().selectedSector;
+      for (const code of candidates) {
+        if (code === current || done.includes(code)) continue;
+        const p = d.sectorScreenPoint(code);
+        if (!p) continue;
+        tap(p);
+        done.push(code);
+        break;
+      }
     }
     return done;
-  }, ['2C', '2M2', '1H']);
-  expect(tapped.length).toBeGreaterThanOrEqual(2);
+  });
+  expect(tapped.length, `taps made: ${tapped.join(', ')}`).toBeGreaterThanOrEqual(2);
   await page.waitForFunction(() => !(window as unknown as { __clujDemo: DemoSeam }).__clujDemo.state().inTransit, null, {
     timeout: 60_000,
   });
