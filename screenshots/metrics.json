@@ -2,12 +2,12 @@
   "laptop-1440x900-high": {
     "overview": {
       "fps": 2.5,
-      "frames": 10,
-      "p95Ms": 500,
-      "worstMs": 500,
+      "frames": 11,
+      "p95Ms": 483.3,
+      "worstMs": 483.3,
       "cpu": {
-        "mainThreadMsPerFrame": 493.55,
-        "scriptMsPerFrame": 3.12
+        "mainThreadMsPerFrame": 473.58,
+        "scriptMsPerFrame": 3.02
       },
       "quality": {
         "tier": "high",
@@ -22,13 +22,13 @@
       }
     },
     "sector": {
-      "fps": 2.5,
+      "fps": 2.3,
       "frames": 10,
-      "p95Ms": 500,
-      "worstMs": 500,
+      "p95Ms": 533.3,
+      "worstMs": 533.3,
       "cpu": {
-        "mainThreadMsPerFrame": 547.46,
-        "scriptMsPerFrame": 2.22
+        "mainThreadMsPerFrame": 533.34,
+        "scriptMsPerFrame": 2.19
       },
       "quality": {
         "tier": "high",
@@ -43,13 +43,13 @@
       }
     },
     "seat": {
-      "fps": 2,
+      "fps": 2.1,
       "frames": 9,
-      "p95Ms": 633.3,
-      "worstMs": 633.3,
+      "p95Ms": 583.3,
+      "worstMs": 583.3,
       "cpu": {
-        "mainThreadMsPerFrame": 680.93,
-        "scriptMsPerFrame": 4.54
+        "mainThreadMsPerFrame": 653.26,
+        "scriptMsPerFrame": 4.21
       },
       "quality": {
         "tier": "high",
@@ -64,17 +64,17 @@
       }
     },
     "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
-    "measuredAt": "2026-11-22T23:41:38.454Z"
+    "measuredAt": "2026-11-23T00:10:58.001Z"
   },
   "laptop-1440x900-adaptive": {
     "overview": {
       "fps": 2.5,
       "frames": 11,
-      "p95Ms": 516.6,
-      "worstMs": 516.6,
+      "p95Ms": 483.3,
+      "worstMs": 483.3,
       "cpu": {
-        "mainThreadMsPerFrame": 482.39,
-        "scriptMsPerFrame": 4.48
+        "mainThreadMsPerFrame": 510.59,
+        "scriptMsPerFrame": 3.71
       },
       "quality": {
         "tier": "high",
@@ -91,11 +91,11 @@
     "sector": {
       "fps": 2.4,
       "frames": 10,
-      "p95Ms": 483.4,
-      "worstMs": 483.4,
+      "p95Ms": 500,
+      "worstMs": 500,
       "cpu": {
-        "mainThreadMsPerFrame": 512.8,
-        "scriptMsPerFrame": 7.37
+        "mainThreadMsPerFrame": 512.09,
+        "scriptMsPerFrame": 1.73
       },
       "quality": {
         "tier": "medium",
@@ -110,13 +110,13 @@
       }
     },
     "seat": {
-      "fps": 2.3,
+      "fps": 2.2,
       "frames": 10,
-      "p95Ms": 650,
-      "worstMs": 650,
+      "p95Ms": 699.9,
+      "worstMs": 699.9,
       "cpu": {
-        "mainThreadMsPerFrame": 535.13,
-        "scriptMsPerFrame": 14.16
+        "mainThreadMsPerFrame": 617.03,
+        "scriptMsPerFrame": 13.79
       },
       "quality": {
         "tier": "medium",
@@ -131,17 +131,17 @@
       }
     },
     "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
-    "measuredAt": "2026-11-22T23:42:20.500Z"
+    "measuredAt": "2026-11-23T00:11:40.712Z"
   },
   "phone-390x844-adaptive": {
     "overview": {
-      "fps": 3.2,
-      "frames": 13,
-      "p95Ms": 466.7,
-      "worstMs": 466.7,
+      "fps": 3.8,
+      "frames": 16,
+      "p95Ms": 400,
+      "worstMs": 400,
       "cpu": {
-        "mainThreadMsPerFrame": 362.79,
-        "scriptMsPerFrame": 3.89
+        "mainThreadMsPerFrame": 307.54,
+        "scriptMsPerFrame": 3.22
       },
       "quality": {
         "tier": "high",
@@ -156,16 +156,16 @@
       }
     },
     "sector": {
-      "fps": 6.6,
-      "frames": 27,
-      "p95Ms": 200,
-      "worstMs": 200,
+      "fps": 6.8,
+      "frames": 28,
+      "p95Ms": 200.1,
+      "worstMs": 216.6,
       "cpu": {
-        "mainThreadMsPerFrame": 171.43,
-        "scriptMsPerFrame": 1.88
+        "mainThreadMsPerFrame": 166.23,
+        "scriptMsPerFrame": 1.82
       },
       "quality": {
-        "tier": "low",
+        "tier": "medium",
         "dpr": 1
       },
       "renderer": {
@@ -177,13 +177,13 @@
       }
     },
     "seat": {
-      "fps": 5.4,
-      "frames": 22,
-      "p95Ms": 216.7,
-      "worstMs": 266.7,
+      "fps": 5.1,
+      "frames": 21,
+      "p95Ms": 266.7,
+      "worstMs": 283.3,
       "cpu": {
-        "mainThreadMsPerFrame": 209.93,
-        "scriptMsPerFrame": 1.94
+        "mainThreadMsPerFrame": 225.21,
+        "scriptMsPerFrame": 1.88
       },
       "quality": {
         "tier": "medium",
@@ -198,6 +198,6 @@
       }
     },
     "gpu": "ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero) (0x0000C0DE)), SwiftShader driver)",
-    "measuredAt": "2026-11-22T23:42:59.312Z"
+    "measuredAt": "2026-11-23T00:12:19.138Z"
   }
 }
